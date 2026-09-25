@@ -49,37 +49,52 @@ export async function run(config, state) {
     last_verdict: prev.verdict || null,
   };
 
-  const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${MODEL}`, {
-    method: "POST",
-    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
-    body: JSON.stringify({
-      messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: JSON.stringify(context) },
-      ],
-      temperature: 0.3,
-      max_tokens: 1400,
-    }),
-    signal: AbortSignal.timeout(60000),
-  });
-  const j = await r.json().catch(() => null);
-  if (!r.ok || !j?.success) {
-    return { ok: false, error: `workers-ai ${r.status}: ${JSON.stringify(j?.errors || []).slice(0, 200)}`, date: today, calls: calls + 1 };
-  }
-
-  const raw = j.result?.choices?.[0]?.message?.content || "";
-  let plan;
-  try {
-    plan = JSON.parse(raw);
-  } catch {
-    const m = raw.match(/\{[\s\S]*\}/);
-    if (!m) return { ok: false, error: "unparseable model reply", raw: raw.slice(0, 200), date: today, calls: calls + 1 };
+  const call = async (systemMsg, temp) => {
+    const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${MODEL}`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: systemMsg },
+          { role: "user", content: JSON.stringify(context) },
+        ],
+        temperature: temp,
+        max_tokens: 1400,
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j?.success) throw new Error(`workers-ai ${r.status}: ${JSON.stringify(j?.errors || []).slice(0, 200)}`);
+    return j.result?.choices?.[0]?.message?.content || "";
+  };
+  const parsePlan = (t) => {
     try {
-      plan = JSON.parse(m[0]);
-    } catch {
-      return { ok: false, error: "unparseable model reply", raw: raw.slice(0, 200), date: today, calls: calls + 1 };
+      return JSON.parse(t);
+    } catch {}
+    const m = (t || "").match(/\{[\s\S]*\}/);
+    if (m) {
+      try {
+        return JSON.parse(m[0]);
+      } catch {}
     }
+    return null;
+  };
+
+  let raw = "";
+  let plan = null;
+  let usedRetry = false;
+  try {
+    raw = await call(SYSTEM, 0.3);
+    plan = parsePlan(raw);
+    if (!plan) {
+      usedRetry = true;
+      raw = await call(SYSTEM + " CRITICAL: your last reply was invalid JSON — output ONLY minified valid JSON.", 0.1);
+      plan = parsePlan(raw);
+    }
+  } catch (e) {
+    return { ok: false, error: String(e.message || e).slice(0, 250), date: today, calls: calls + (usedRetry ? 2 : 1) };
   }
+  if (!plan) return { ok: false, error: "unparseable model reply", raw: raw.slice(0, 200), date: today, calls: calls + (usedRetry ? 2 : 1) };
 
   mkdirSync(OUT, { recursive: true });
   writeFileSync(
