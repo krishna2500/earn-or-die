@@ -1,7 +1,7 @@
 {
   "born": "2026-09-25",
   "status": "alive",
-  "cycle": 5,
+  "cycle": 6,
   "lastRevenueAt": null,
   "totalRevenue": 0,
   "budgets": {
@@ -11,7 +11,7 @@
   },
   "armStatus": {
     "bounties": {
-      "at": "2026-09-25T08:02:50.748Z",
+      "at": "2026-09-25T09:55:13.023Z",
       "ok": true,
       "total": 68,
       "payable": 3,
@@ -19,7 +19,7 @@
       "candidates": []
     },
     "content": {
-      "at": "2026-09-25T08:02:50.749Z",
+      "at": "2026-09-25T09:55:13.024Z",
       "ok": true,
       "status": "research-phase",
       "notes": [
@@ -30,13 +30,16 @@
       "next": "maintain topic backlog until distribution channel exists"
     },
     "products": {
-      "at": "2026-09-25T08:02:50.750Z",
+      "at": "2026-09-25T09:55:15.012Z",
       "ok": true,
-      "status": "awaiting-cryptobot-key",
+      "status": "checkout-rail-live",
+      "rail": "live",
+      "lastEventSince": "2026-09-25T09:55:15.011Z",
+      "newPayments": 0,
       "notes": [
-        "Micro-product funnel: free infra (CF Workers/Pages) + crypto checkout -> USDT TRC-20 payout wallet.",
-        "Blocked on: CryptoBot API key (owner: @CryptoBot on Telegram -> /api -> Create API Key).",
-        "Second blocker (same for all arms): distribution — owner must paste product link somewhere, once."
+        "on-chain USDT TRC-20 verification (no gateway, no KYC, no country block)",
+        "rail: https://earn-or-die-pay.leadrescue.workers.dev",
+        "first product: still building — rail is ready before storefront"
       ]
     }
   }

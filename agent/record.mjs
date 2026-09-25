@@ -1,48 +1,58 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { dirname } from "path";
+import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const [arm, amountStr, currency, ...noteParts] = process.argv.slice(2);
 
-if (!arm || !amountStr || !currency) {
-  console.error("usage: node agent/record.mjs <arm> <amount> <currency> <note...>");
-  process.exit(1);
+export function applyEntry(config, state, ledger, entry) {
+  ledger.push(entry);
+  const a = config.allocation;
+  if (entry.currency === "USDT" || entry.currency === "USD") {
+    state.totalRevenue = (state.totalRevenue || 0) + entry.amount;
+  }
+  state.lastRevenueAt = entry.ts;
+  if (state.status !== "dead") state.status = "alive";
+  state.budgets = state.budgets || { reinvest: 0, reserve: 0, ownerPayout: 0 };
+  state.budgets.reinvest = +(state.budgets.reinvest + entry.amount * a.reinvest).toFixed(4);
+  state.budgets.reserve = +(state.budgets.reserve + entry.amount * a.reserve).toFixed(4);
+  state.budgets.ownerPayout = +(state.budgets.ownerPayout + entry.amount * a.ownerPayout).toFixed(4);
+  return entry;
 }
-const amount = Number(amountStr);
-if (!Number.isFinite(amount) || amount <= 0) {
-  console.error("amount must be a positive number");
-  process.exit(1);
+
+export function record(arm, amountStr, currency, ...noteParts) {
+  const amount = Number(amountStr);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    console.error("amount must be a positive number");
+    process.exit(1);
+  }
+  const config = JSON.parse(readFileSync(`${HERE}/../config.json`, "utf8"));
+  const statePath = `${HERE}/state/state.json`;
+  const ledgerPath = `${HERE}/state/ledger.json`;
+  const state = JSON.parse(readFileSync(statePath, "utf8"));
+  const ledger = existsSync(ledgerPath) ? JSON.parse(readFileSync(ledgerPath, "utf8")) : [];
+
+  const entry = {
+    ts: new Date().toISOString(),
+    arm,
+    amount,
+    currency: currency.toUpperCase(),
+    note: noteParts.join(" ") || "",
+  };
+  applyEntry(config, state, ledger, entry);
+  writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2) + "\n");
+  writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
+
+  console.log("recorded:", entry);
+  console.log("budgets:", state.budgets);
+  console.log("agent status revived ->", state.status);
 }
 
-const config = JSON.parse(readFileSync(`${HERE}/../config.json`, "utf8"));
-const statePath = `${HERE}/state/state.json`;
-const ledgerPath = `${HERE}/state/ledger.json`;
-const state = JSON.parse(readFileSync(statePath, "utf8"));
-const ledger = existsSync(ledgerPath) ? JSON.parse(readFileSync(ledgerPath, "utf8")) : [];
-
-const entry = {
-  ts: new Date().toISOString(),
-  arm,
-  amount,
-  currency: currency.toUpperCase(),
-  note: noteParts.join(" ") || "",
-};
-ledger.push(entry);
-writeFileSync(ledgerPath, JSON.stringify(ledger, null, 2) + "\n");
-
-// allocation: only ever from earned money
-const a = config.allocation;
-state.totalRevenue = (state.totalRevenue || 0) + (entry.currency === "USDT" || entry.currency === "USD" ? amount : 0);
-state.lastRevenueAt = entry.ts;
-if (state.status !== "dead") state.status = "alive"; // revenue revives the agent
-state.budgets = state.budgets || { reinvest: 0, reserve: 0, ownerPayout: 0 };
-state.budgets.reinvest = +(state.budgets.reinvest + amount * a.reinvest).toFixed(4);
-state.budgets.reserve = +(state.budgets.reserve + amount * a.reserve).toFixed(4);
-state.budgets.ownerPayout = +(state.budgets.ownerPayout + amount * a.ownerPayout).toFixed(4);
-
-writeFileSync(statePath, JSON.stringify(state, null, 2) + "\n");
-
-console.log("recorded:", entry);
-console.log("budgets:", state.budgets);
-console.log("agent status revived ->", state.status);
+const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  const [arm, amountStr, currency, ...noteParts] = process.argv.slice(2);
+  if (!arm || !amountStr || !currency) {
+    console.error("usage: node agent/record.mjs <arm> <amount> <currency> <note...>");
+    process.exit(1);
+  }
+  record(arm, amountStr, currency, ...noteParts);
+}

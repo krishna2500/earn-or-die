@@ -36,16 +36,31 @@ if (state.status !== "dead") {
   else if (daysSinceRev >= config.killRule.dyingAfterDays) state.status = "dying";
 }
 
-const summary = { daysAlive, daysSinceRev, status: state.status, found: 0, arms: {} };
+const summary = { daysAlive, daysSinceRev, status: state.status, found: 0, recorded: 0, arms: {} };
 
 if (state.status !== "dead") {
   for (const arm of config.arms.filter((a) => a.enabled)) {
     try {
       const mod = await import(`${HERE}/arms/${arm.id}.mjs`);
       const result = await mod.run(config, state);
-      state.armStatus[arm.id] = { at: new Date().toISOString(), ...result };
-      summary.arms[arm.id] = result;
+      const { events, ...stored } = result;
+      state.armStatus[arm.id] = { at: new Date().toISOString(), ...stored };
+      summary.arms[arm.id] = stored;
       if (arm.id === "bounties" && result?.candidates) summary.found = result.candidates.length;
+      if (Array.isArray(events) && events.length) {
+        const { applyEntry } = await import(`${HERE}/record.mjs`);
+        for (const ev of events) {
+          applyEntry(config, state, ledger, {
+            ts: ev.ts || new Date().toISOString(),
+            arm: arm.id,
+            amount: Number(ev.amount),
+            currency: ev.currency || "USDT",
+            note: ev.note || "",
+          });
+          summary.recorded += 1;
+        }
+        write(`${HERE}/state/ledger.json`, ledger);
+      }
     } catch (e) {
       const err = { ok: false, error: String(e?.message || e).slice(0, 300) };
       state.armStatus[arm.id] = { at: new Date().toISOString(), ...err };

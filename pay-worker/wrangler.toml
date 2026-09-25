@@ -1,0 +1,16 @@
+name = "earn-or-die-pay"
+main = "src/index.js"
+compatibility_date = "2026-09-25"
+account_id = "46e0796ca5735d24674f46b281b358a0"
+
+[vars]
+WALLET = "TL5YPXfZvokPy2TMtULRXmXRkzYbmmvevy"
+NETWORK = "TRC-20"
+ASSET = "USDT"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[kv_namespaces]]
+binding = "ORDERS"
+id = "a6308b2996004eeab112b1560c57d611"
