@@ -1,7 +1,7 @@
 {
   "born": "2026-09-25",
   "status": "alive",
-  "cycle": 1,
+  "cycle": 2,
   "lastRevenueAt": null,
   "totalRevenue": 0,
   "budgets": {
@@ -11,7 +11,7 @@
   },
   "armStatus": {
     "bounties": {
-      "at": "2026-09-25T07:28:11.878Z",
+      "at": "2026-09-25T07:29:52.002Z",
       "ok": true,
       "total": 40,
       "payable": 1,
@@ -24,6 +24,33 @@
           "amount": 0.2,
           "comments": 143,
           "updated": "2026-09-25T07:19:51Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Document the feature flag matrix and the localStorage override behaviour",
+          "url": "https://github.com/OphirPay/OphirPay/issues/771",
+          "amount": null,
+          "comments": 4,
+          "updated": "2026-09-25T07:29:40Z"
+        },
+        {
+          "source": "github",
+          "repo": "tadanobutubutu/screeps",
+          "title": "Dependency Dashboard",
+          "url": "https://github.com/tadanobutubutu/screeps/issues/5",
+          "amount": null,
+          "comments": 1195,
+          "updated": "2026-09-25T07:29:38Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add a check that the translated READMEs stay in sync with the English one",
+          "url": "https://github.com/OphirPay/OphirPay/issues/770",
+          "amount": null,
+          "comments": 7,
+          "updated": "2026-09-25T07:29:32Z"
         },
         {
           "source": "github",
@@ -213,38 +240,11 @@
           "amount": null,
           "comments": 1,
           "updated": "2026-09-25T07:19:38Z"
-        },
-        {
-          "source": "github",
-          "repo": "OphirPay/OphirPay",
-          "title": "Replace the modeled Kani proof set with a harness that exercises the real contract",
-          "url": "https://github.com/OphirPay/OphirPay/issues/802",
-          "amount": null,
-          "comments": 5,
-          "updated": "2026-09-25T07:19:12Z"
-        },
-        {
-          "source": "github",
-          "repo": "OphirPay/OphirPay",
-          "title": "Wire error tracking end to end so ErrorBoundary reports reach a backend",
-          "url": "https://github.com/OphirPay/OphirPay/issues/801",
-          "amount": null,
-          "comments": 3,
-          "updated": "2026-09-25T07:19:02Z"
-        },
-        {
-          "source": "github",
-          "repo": "OphirPay/OphirPay",
-          "title": "Build a payment stream UI with vesting progress",
-          "url": "https://github.com/OphirPay/OphirPay/issues/799",
-          "amount": null,
-          "comments": 1,
-          "updated": "2026-09-25T07:18:52Z"
         }
       ]
     },
     "content": {
-      "at": "2026-09-25T07:28:11.879Z",
+      "at": "2026-09-25T07:29:52.003Z",
       "ok": true,
       "status": "research-phase",
       "notes": [
@@ -255,7 +255,7 @@
       "next": "maintain topic backlog until distribution channel exists"
     },
     "products": {
-      "at": "2026-09-25T07:28:11.880Z",
+      "at": "2026-09-25T07:29:52.003Z",
       "ok": true,
       "status": "awaiting-cryptobot-key",
       "notes": [
