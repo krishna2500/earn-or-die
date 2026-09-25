@@ -1,0 +1,45 @@
+name: earn-or-die
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run agent cycle
+        id: agent
+        continue-on-error: true
+        run: node agent/core.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_OWNER_CHAT: ${{ secrets.TG_OWNER_CHAT }}
+          CRYPTOBOT_API_KEY: ${{ secrets.CRYPTOBOT_API_KEY }}
+
+      - name: Persist state + opportunities
+        run: |
+          git config user.name "earn-or-die-agent"
+          git config user.email "earn-or-die-agent@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "agent: cycle ${{ github.run_number }}"
+          git push
+
+      - name: "Self-destruct: agent earned nothing, remove own cron"
+        if: steps.agent.outcome == 'failure'
+        run: |
+          rm -f .github/workflows/agent.yml
+          git add -A
+          git diff --cached --quiet || git commit -m "agent: DEAD after earning nothing — deleting own cron"
+          git push

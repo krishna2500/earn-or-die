@@ -1,0 +1,268 @@
+{
+  "born": "2026-09-25",
+  "status": "alive",
+  "cycle": 1,
+  "lastRevenueAt": null,
+  "totalRevenue": 0,
+  "budgets": {
+    "reinvest": 0,
+    "reserve": 0,
+    "ownerPayout": 0
+  },
+  "armStatus": {
+    "bounties": {
+      "at": "2026-09-25T07:28:11.878Z",
+      "ok": true,
+      "total": 40,
+      "payable": 1,
+      "candidates": [
+        {
+          "source": "github",
+          "repo": "Scottcjn/rustchain-bounties",
+          "title": "[Bounty] Add RustChain to Your GitHub Profile README - 2 RTC",
+          "url": "https://github.com/Scottcjn/rustchain-bounties/issues/515",
+          "amount": 0.2,
+          "comments": 143,
+          "updated": "2026-09-25T07:19:51Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Consolidate the five overlapping error-handling modules",
+          "url": "https://github.com/OphirPay/OphirPay/issues/760",
+          "amount": null,
+          "comments": 4,
+          "updated": "2026-09-25T07:22:50Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Publish a SEP-1 stellar.toml so wallets can discover the deployment",
+          "url": "https://github.com/OphirPay/OphirPay/issues/813",
+          "amount": null,
+          "comments": 7,
+          "updated": "2026-09-25T07:22:22Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add a trustline setup flow for non-native assets",
+          "url": "https://github.com/OphirPay/OphirPay/issues/809",
+          "amount": null,
+          "comments": 3,
+          "updated": "2026-09-25T07:22:16Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add a governance proposal detail view with vote history and execution state",
+          "url": "https://github.com/OphirPay/OphirPay/issues/808",
+          "amount": null,
+          "comments": 2,
+          "updated": "2026-09-25T07:22:08Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Surface refund reason-code analytics in the UI",
+          "url": "https://github.com/OphirPay/OphirPay/issues/807",
+          "amount": null,
+          "comments": 1,
+          "updated": "2026-09-25T07:22:02Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Expose RPC failover state as a health and metrics signal",
+          "url": "https://github.com/OphirPay/OphirPay/issues/820",
+          "amount": null,
+          "comments": 2,
+          "updated": "2026-09-25T07:21:54Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add a Go reference verifier for webhook signatures",
+          "url": "https://github.com/OphirPay/OphirPay/issues/818",
+          "amount": null,
+          "comments": 6,
+          "updated": "2026-09-25T07:21:47Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add an automation-platform integration guide with generated payload examples",
+          "url": "https://github.com/OphirPay/OphirPay/issues/817",
+          "amount": null,
+          "comments": 4,
+          "updated": "2026-09-25T07:21:41Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add OpenTelemetry tracing so a payment can be followed across contract, API and database",
+          "url": "https://github.com/OphirPay/OphirPay/issues/815",
+          "amount": null,
+          "comments": 1,
+          "updated": "2026-09-25T07:21:34Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Harden the price feed with caching, rate-limit handling and a staleness policy",
+          "url": "https://github.com/OphirPay/OphirPay/issues/814",
+          "amount": null,
+          "comments": 3,
+          "updated": "2026-09-25T07:21:28Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Look up asset metadata so custom assets display their ticker and issuer name",
+          "url": "https://github.com/OphirPay/OphirPay/issues/824",
+          "amount": null,
+          "comments": 5,
+          "updated": "2026-09-25T07:21:12Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Recommend transaction fees from Horizon fee statistics instead of a static value",
+          "url": "https://github.com/OphirPay/OphirPay/issues/825",
+          "amount": null,
+          "comments": 10,
+          "updated": "2026-09-25T07:21:06Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Publish a CLI or GitHub Action so CI pipelines can create payments",
+          "url": "https://github.com/OphirPay/OphirPay/issues/822",
+          "amount": null,
+          "comments": 4,
+          "updated": "2026-09-25T07:20:45Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add a SEP-24 style anchor deposit and withdrawal flow for fiat on-ramp",
+          "url": "https://github.com/OphirPay/OphirPay/issues/821",
+          "amount": null,
+          "comments": 3,
+          "updated": "2026-09-25T07:20:40Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add SEP-7 URI handoff so mobile wallets can complete a payment",
+          "url": "https://github.com/OphirPay/OphirPay/issues/812",
+          "amount": null,
+          "comments": 1,
+          "updated": "2026-09-25T07:20:32Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add CSV import and export for the address book",
+          "url": "https://github.com/OphirPay/OphirPay/issues/811",
+          "amount": null,
+          "comments": 4,
+          "updated": "2026-09-25T07:20:26Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Handle payment request expiration and reminders",
+          "url": "https://github.com/OphirPay/OphirPay/issues/810",
+          "amount": null,
+          "comments": 1,
+          "updated": "2026-09-25T07:20:03Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add a dead-letter queue and delivery timeout for webhooks that exhaust retries",
+          "url": "https://github.com/OphirPay/OphirPay/issues/806",
+          "amount": null,
+          "comments": 3,
+          "updated": "2026-09-25T07:19:55Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add API key rotation alongside revocation",
+          "url": "https://github.com/OphirPay/OphirPay/issues/805",
+          "amount": null,
+          "comments": 2,
+          "updated": "2026-09-25T07:19:50Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Add an on-chain idempotency key to record_payment",
+          "url": "https://github.com/OphirPay/OphirPay/issues/804",
+          "amount": null,
+          "comments": 3,
+          "updated": "2026-09-25T07:19:43Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Make timelocked actions actually dispatch to the functions they claim to protect",
+          "url": "https://github.com/OphirPay/OphirPay/issues/803",
+          "amount": null,
+          "comments": 1,
+          "updated": "2026-09-25T07:19:38Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Replace the modeled Kani proof set with a harness that exercises the real contract",
+          "url": "https://github.com/OphirPay/OphirPay/issues/802",
+          "amount": null,
+          "comments": 5,
+          "updated": "2026-09-25T07:19:12Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Wire error tracking end to end so ErrorBoundary reports reach a backend",
+          "url": "https://github.com/OphirPay/OphirPay/issues/801",
+          "amount": null,
+          "comments": 3,
+          "updated": "2026-09-25T07:19:02Z"
+        },
+        {
+          "source": "github",
+          "repo": "OphirPay/OphirPay",
+          "title": "Build a payment stream UI with vesting progress",
+          "url": "https://github.com/OphirPay/OphirPay/issues/799",
+          "amount": null,
+          "comments": 1,
+          "updated": "2026-09-25T07:18:52Z"
+        }
+      ]
+    },
+    "content": {
+      "at": "2026-09-25T07:28:11.879Z",
+      "ok": true,
+      "status": "research-phase",
+      "notes": [
+        "2026-09 research: thin/AI-farm content is domain-level penalized (Sep 2026 core update).",
+        "Only ships when: topical cluster depth + editorial layer + real domain (needs owner's domain/GSC one-time).",
+        "First publication blocked on: domain + affiliate/ad accounts (owner one-time setup)."
+      ],
+      "next": "maintain topic backlog until distribution channel exists"
+    },
+    "products": {
+      "at": "2026-09-25T07:28:11.880Z",
+      "ok": true,
+      "status": "awaiting-cryptobot-key",
+      "notes": [
+        "Micro-product funnel: free infra (CF Workers/Pages) + crypto checkout -> USDT TRC-20 payout wallet.",
+        "Blocked on: CryptoBot API key (owner: @CryptoBot on Telegram -> /api -> Create API Key).",
+        "Second blocker (same for all arms): distribution — owner must paste product link somewhere, once."
+      ]
+    }
+  }
+}

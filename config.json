@@ -1,0 +1,11 @@
+{
+  "mission": "Earn from zero. Owner capital forbidden. Reinvest only what is earned.",
+  "allocation": { "reinvest": 0.5, "reserve": 0.3, "ownerPayout": 0.2 },
+  "killRule": { "dyingAfterDays": 45, "deadAfterDays": 90 },
+  "arms": [
+    { "id": "bounties", "enabled": true, "label": "OSS bounties — scout, solve, claim" },
+    { "id": "content", "enabled": true, "label": "SEO/affiliate content (research phase)" },
+    { "id": "products", "enabled": true, "label": "Micro-products with crypto checkout" }
+  ],
+  "payout": { "network": "TRC-20", "asset": "USDT", "address": "TL5YPXfZvokPy2TMtULRXmXRkzYbmmvevy" }
+}
