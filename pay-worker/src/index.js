@@ -282,11 +282,10 @@ async function agentWatchdog(env) {
   }
 }
 
-async function manualVerify(env) {
-  const KEY = "meta:last_manual_verify";
-  const last = Number((await env.ORDERS.get(KEY)) || 0);
-  if (Date.now() - last < 10000) return json({ checked: 0, note: "rate-limited (10s gap)" });
-  await env.ORDERS.put(KEY, String(Date.now()));
+async function manualVerify(env, url) {
+  if (env.VERIFY_KEY && url.searchParams.get("key") !== env.VERIFY_KEY) {
+    return json({ error: "forbidden" }, 403);
+  }
   return json({ checked: await verify(env) });
 }
 
@@ -307,7 +306,7 @@ export default {
         return await useInvoice(env, request);
       }
       if (request.method === "GET" && url.pathname === "/verify") {
-        return await manualVerify(env);
+        return await manualVerify(env, url);
       }
       if (request.method === "GET" && url.pathname === "/shop") {
         return shopPage(env);
