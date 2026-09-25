@@ -28,7 +28,7 @@ export async function run(config, state) {
     ts: ev.ts,
     amount: Number(ev.amount),
     currency: ev.currency || "USDT",
-    note: ev.note || `on-chain payment ${ev.tx || ""}`,
+    note: `${ev.product || "payment"} on-chain verified | tx:${ev.tx || "?"}`,
   }));
 
   return {

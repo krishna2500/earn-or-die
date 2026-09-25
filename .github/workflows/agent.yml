@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Sync latest state before cycle
+        run: git pull --rebase origin main || true
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -21,25 +24,40 @@ jobs:
       - name: Run agent cycle
         id: agent
         continue-on-error: true
-        run: node agent/core.mjs
+        run: |
+          set +e
+          node agent/core.mjs
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit $code
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_OWNER_CHAT: ${{ secrets.TG_OWNER_CHAT }}
-          CRYPTOBOT_API_KEY: ${{ secrets.CRYPTOBOT_API_KEY }}
 
       - name: Persist state + opportunities
         run: |
           git config user.name "earn-or-die-agent"
           git config user.email "earn-or-die-agent@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || git commit -m "agent: cycle ${{ github.run_number }}"
-          git push
+          if git diff --cached --quiet; then
+            echo "no changes"
+            exit 0
+          fi
+          git commit -m "agent: cycle ${{ github.run_number }}"
+          for i in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "push failed after 3 retries (remote moved mid-cycle)"
+          exit 1
 
-      - name: "Self-destruct: agent earned nothing, remove own cron"
-        if: steps.agent.outcome == 'failure'
+      - name: "Self-destruct: ONLY when agent exits 2 (DEAD)"
+        if: steps.agent.outputs.code == '2'
         run: |
           rm -f .github/workflows/agent.yml
           git add -A
           git diff --cached --quiet || git commit -m "agent: DEAD after earning nothing — deleting own cron"
-          git push
+          git push || true

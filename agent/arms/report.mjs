@@ -26,7 +26,7 @@ export async function report(state, summary, config, ledger) {
     body: JSON.stringify({ chat_id: chat, text }),
   });
   if (!r.ok) {
-    console.log("telegram:", r.status, "(owner has not pressed Start on the bot yet — logged only)");
+    console.log(`telegram delivery failed: ${r.status} (logged only)`);
     return false;
   }
   return true;

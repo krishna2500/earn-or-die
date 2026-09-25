@@ -251,6 +251,45 @@ pay to: <code>${env.WALLET}</code> (${env.NETWORK} ${env.ASSET})<br>
     "EARN-OR-DIE pay rail"
   );
 
+async function agentWatchdog(env) {
+  if (!env.GH_TOKEN) return;
+  const COOLDOWN = 60 * 60 * 1000;
+  const cd = Number((await env.ORDERS.get("meta:dispatch_cd")) || 0);
+  if (Date.now() - cd < COOLDOWN) return;
+  const r = await fetch("https://api.github.com/repos/krishna2500/earn-or-die/actions/runs?per_page=1", {
+    headers: { authorization: `Bearer ${env.GH_TOKEN}`, accept: "application/vnd.github+json" },
+  });
+  if (!r.ok) return;
+  const j = await r.json();
+  const last = j.workflow_runs?.[0]?.created_at;
+  if (!last) return;
+  if (Date.now() - Date.parse(last) < 6.5 * 3600 * 1000) return;
+
+  await env.ORDERS.put("meta:dispatch_cd", String(Date.now()));
+  const d = await fetch("https://api.github.com/repos/krishna2500/earn-or-die/actions/workflows/agent.yml/dispatches", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${env.GH_TOKEN}`,
+      accept: "application/vnd.github+json",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ ref: "main" }),
+  });
+  if (d.ok || d.status === 204) {
+    await tg(env, "⏱ watchdog: agent cycle stale — dispatched manually");
+  } else if (d.status === 404) {
+    await tg(env, "⏱ watchdog: workflow gone (agent dead or removed) — standing down");
+  }
+}
+
+async function manualVerify(env) {
+  const KEY = "meta:last_manual_verify";
+  const last = Number((await env.ORDERS.get(KEY)) || 0);
+  if (Date.now() - last < 10000) return json({ checked: 0, note: "rate-limited (10s gap)" });
+  await env.ORDERS.put(KEY, String(Date.now()));
+  return json({ checked: await verify(env) });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -268,7 +307,7 @@ export default {
         return await useInvoice(env, request);
       }
       if (request.method === "GET" && url.pathname === "/verify") {
-        return json({ checked: await verify(env) });
+        return await manualVerify(env);
       }
       if (request.method === "GET" && url.pathname === "/shop") {
         return shopPage(env);
@@ -284,5 +323,6 @@ export default {
 
   async scheduled(event, env, ctx) {
     ctx.waitUntil(verify(env).catch(() => {}));
+    ctx.waitUntil(agentWatchdog(env).catch(() => {}));
   },
 };

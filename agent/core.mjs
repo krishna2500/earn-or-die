@@ -50,12 +50,16 @@ if (state.status !== "dead") {
       if (Array.isArray(events) && events.length) {
         const { applyEntry } = await import(`${HERE}/record.mjs`);
         for (const ev of events) {
+          const amt = Number(ev.amount);
+          if (!Number.isFinite(amt) || amt <= 0) continue;
+          const note = (ev.note || "").trim();
+          if (note && ledger.some((e) => e.note === note)) continue;
           applyEntry(config, state, ledger, {
             ts: ev.ts || new Date().toISOString(),
             arm: arm.id,
-            amount: Number(ev.amount),
+            amount: amt,
             currency: ev.currency || "USDT",
-            note: ev.note || "",
+            note,
           });
           summary.recorded += 1;
         }

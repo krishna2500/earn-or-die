@@ -78,7 +78,6 @@ export async function run() {
       }
       // farm marker: repo with huge open-bounty count
       for (const c of candidates) if (c.source === "algora" && byRepo[c.repo] > 15) c.farm = true;
-      if (items.length && items.length < 100) break;
     }
   } catch (e) {
     candidates.push({ source: "algora", error: String(e?.message || e).slice(0, 200) });
