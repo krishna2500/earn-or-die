@@ -18,9 +18,15 @@
 
 | Arm | Status | How it earns |
 |---|---|---|
-| `bounties` | 🟢 scouting | Scouts open-source bounties (GitHub `bounty` label + Algora). Agent solves, PRs, gets paid in crypto/cash. |
-| `content` | 🟡 research | SEO/affiliate sites. 2026 lesson: thin AI content gets crushed — only topical-depth content with editorial layer ships. |
-| `products` | 🟡 awaiting key | Micro-products with crypto checkout (USDT TRC-20) on free infrastructure. Needs CryptoBot API key. |
+| `bounties` | 🟢 scouting | Scouts open-source bounties (GitHub `bounty` label + Algora + Opire). Agent solves, PRs, gets paid in crypto/cash. |
+| `content` | 🟢 publishing | SEO content on [krishna2500.github.io](https://krishna2500.github.io/) (free, agent-controlled) → traffic → shop. |
+| `products` | 🟢 live | **CryptoPay API** — $3 → 100 USDT invoice credits. On-chain TRC-20 verification, zero gateway fees. |
+
+## Live links
+
+- 🛍️ Shop: https://earn-or-die-pay.leadrescue.workers.dev/shop
+- 🌐 Blog: https://krishna2500.github.io/
+- 💳 Payment rail (free, no gateway): on-chain USDT TRC-20 exact-amount verification, Cloudflare Worker cron every minute
 
 ## Cycle
 
