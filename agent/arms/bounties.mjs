@@ -168,8 +168,8 @@ export async function run() {
       const age = (Date.now() - +new Date(last.created_at)) / 86400000;
       c.zombie = age > 120 && c.comments > 5 && !maintainerActive;
     }
-    // repo with many open bounty issues = farm
-    if ((c.stars ?? 0) < 10 && !c.source) c.farm = true;
+    // repo with <10 stars paying bounties = likely farm
+    if ((c.stars ?? 0) < 10) c.farm = true;
     await new Promise((x) => setTimeout(x, 350));
   }
 

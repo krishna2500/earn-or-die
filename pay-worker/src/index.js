@@ -62,13 +62,44 @@ async function makeOrder(env, product, price) {
   return null;
 }
 
-async function createOrder(env, body) {
+// KV reads are edge-cached (~60s) so KV counters can't do tight rate limits.
+// In-memory per-isolate buckets handle bursts; KV stays for durable state only.
+const mem = new Map();
+function memGet(k) {
+  const e = mem.get(k);
+  if (!e || e.exp < Date.now()) {
+    mem.delete(k);
+    return null;
+  }
+  return e.v;
+}
+function memSet(k, v, ms) {
+  mem.set(k, { v, exp: Date.now() + ms });
+  if (mem.size > 8000) {
+    for (const key of mem.keys()) {
+      mem.delete(key);
+      if (mem.size <= 4000) break;
+    }
+  }
+}
+function ipSpend(ip, limit = 10) {
+  if (!ip) return true;
+  const k = `o:${ip}`;
+  const b = memGet(k) || { n: 0 };
+  if (b.n >= limit) return false;
+  b.n += 1;
+  memSet(k, b, 3600 * 1000);
+  return true;
+}
+
+async function createOrder(env, body, ip) {
   const product = String(body?.product || "").trim();
   const fromShop = SHOP[product];
   const price = fromShop ? fromShop.price : Number(body?.price);
   if (!Number.isFinite(price) || price < 0.5 || price > 500) {
     return json({ error: "unknown product or price must be 0.5-500 USDT" }, 400);
   }
+  if (!ipSpend(ip)) return json({ error: "rate-limited, retry later" }, 429);
   const order = await makeOrder(env, fromShop ? product : String(body?.product || "custom").slice(0, 80), price);
   if (!order) return json({ error: "no unique amount available, retry" }, 503);
   return json({
@@ -372,9 +403,13 @@ export default {
     const url = new URL(request.url);
     if (ctx?.waitUntil) {
       const day = new Date().toISOString().slice(0, 10);
+      const ip = request.headers.get("cf-connecting-ip") || "anon";
       ctx.waitUntil(
         (async () => {
           try {
+            // max 1 count write per IP per minute (protects KV write quota)
+            if (memGet(`h:${ip}`)) return;
+            memSet(`h:${ip}`, 1, 60 * 1000);
             const k = `hits:${day}`;
             const n = Number((await env.ORDERS.get(k)) || 0) + 1;
             await env.ORDERS.put(k, String(n), { expirationTtl: 60 * 60 * 24 * 14 });
@@ -397,7 +432,7 @@ export default {
         });
       }
       if (request.method === "POST" && url.pathname === "/order") {
-        return await createOrder(env, await request.json().catch(() => null));
+        return await createOrder(env, await request.json().catch(() => null), request.headers.get("cf-connecting-ip"));
       }
       if (request.method === "GET" && url.pathname === "/order") {
         return await getOrder(env, url.searchParams.get("id") || "");

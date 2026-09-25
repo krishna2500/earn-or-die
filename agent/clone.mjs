@@ -68,13 +68,13 @@ function deployPages(slug) {
   const out = [];
   const tryRun = (args) => {
     try {
-      out.push(execFileSync("npx", ["wrangler", ...args], { cwd: `${HERE}/../pay-worker`, stdio: ["ignore", "pipe", "pipe"] }).toString().trim().split("\n").pop());
+      out.push(execFileSync("npx", ["--yes", "wrangler@4", ...args], { cwd: dir, stdio: ["ignore", "pipe", "pipe"], timeout: 240000 }).toString().trim().split("\n").pop());
     } catch (e) {
       out.push("wrangler: " + String(e.stdout || e.stderr || e.message).trim().split("\n").pop());
     }
   };
   tryRun(["pages", "project", "create", slug, "--production-branch=main"]);
-  tryRun(["pages", "deploy", dir, "--project-name=" + slug, "--branch=main"]);
+  tryRun(["pages", "deploy", ".", "--project-name=" + slug, "--branch=main"]);
   return out;
 }
 
@@ -104,9 +104,11 @@ export async function run(config, state, opts = {}) {
       "README.md": `# ${plan.title}\n\n${plan.pitch}\n\nShop: https://earn-or-die-pay.leadrescue.workers.dev/shop\n\nPart of the [earn-or-die](https://github.com/krishna2500/earn-or-die) fleet — clones launch only after first revenue.\n`,
     });
     result.repoUrl = `https://github.com/${result.repo}`;
-    if (!process.env.CLONE_NO_PAGES) {
+    if (!process.env.CLONE_NO_PAGES && process.env.CF_API_TOKEN && process.env.CF_ACCOUNT_ID) {
       result.pages = deployPages(plan.slug);
       result.site = `https://${plan.slug}.pages.dev`;
+    } else {
+      result.pages = "skipped (no CF env)";
     }
     fleet.clones.push(result);
     write(`${STATE}/fleet.json`, fleet);

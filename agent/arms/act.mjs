@@ -134,6 +134,8 @@ async function attemptBounty(config, state, token, log) {
       if (!judge?.solves) { log.push(`skip ${b.url}: reviewer rejected (${judge?.reason || "?"})`); continue; }
 
       for (const p of patches) writeFileSync(join(dir, p.f), p.next);
+      sh(["config", "user.name", "earn-or-die-agent"], { cwd: dir });
+      sh(["config", "user.email", "earn-or-die-agent@users.noreply.github.com"], { cwd: dir });
       sh(["checkout", "-q", "-b", branch], { cwd: dir });
       sh(["add", "-A"], { cwd: dir });
       sh(["commit", "-qm", `fix: ${issue.data.title.slice(0, 60)} (#${num})`], { cwd: dir });
@@ -195,6 +197,7 @@ async function writePost(plan, token, log) {
     const blogDir = join(site, "blog");
     mkdirSync(blogDir, { recursive: true });
     const existing = readdirSync(blogDir).filter((f) => f.endsWith(".html"));
+    if (!existing.length) return { ok: false, error: "blog repo empty — no style reference" };
     const titles = existing.map((f) => f.replace(/\.html$/, ""));
     if (existing.length >= 12) return { ok: true, status: "post cap reached (12)" };
     const ideas = (plan?.plan?.next_content || []).filter((i) => !titles.some((t) => t.includes(i.toLowerCase().slice(0, 20))));
