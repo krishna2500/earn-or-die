@@ -1,6 +1,13 @@
 const USDT_CONTRACT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 const ORDER_TTL = 1800;
 const MAX_PENDING = 60;
+const SHOP = {
+  "paykit-100": {
+    price: 3,
+    title: "CryptoPay API — 100 invoice credits",
+    desc: "Accept USDT TRC-20 with no gateway, no KYC. Exact-amount invoices + on-chain auto-verify API. 100 credits, key valid forever until used.",
+  },
+};
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -17,33 +24,33 @@ async function tg(env, text) {
   }).catch(() => {});
 }
 
-async function createOrder(env, body) {
-  const product = String(body?.product || "unknown").slice(0, 80);
-  const price = Number(body?.price);
-  if (!Number.isFinite(price) || price < 0.5 || price > 500) {
-    return json({ error: "price must be 0.5-500 USDT" }, 400);
-  }
-  let order = null;
+async function activeAmount(env, amount) {
+  return env.ORDERS.get(`amt:${amount}`);
+}
+
+async function makeOrder(env, product, price) {
   for (let i = 0; i < 30; i++) {
     const suffix = Math.floor(Math.random() * 9000) + 1000;
     const amount = (price + suffix / 1e6).toFixed(6);
-    const existing = await env.ORDERS.get(`amt:${amount}`);
-    if (existing) continue;
+    if (await activeAmount(env, amount)) continue;
     const id = crypto.randomUUID();
     const now = Date.now();
-    order = {
-      id,
-      product,
-      price,
-      amount,
-      created: now,
-      expires: now + ORDER_TTL * 1000,
-      status: "pending",
-    };
+    const order = { id, product, price, amount, created: now, expires: now + ORDER_TTL * 1000, status: "pending" };
     await env.ORDERS.put(`order:${id}`, JSON.stringify(order), { expirationTtl: 3600 });
     await env.ORDERS.put(`amt:${amount}`, id, { expirationTtl: 3600 });
-    break;
+    return order;
   }
+  return null;
+}
+
+async function createOrder(env, body) {
+  const product = String(body?.product || "").trim();
+  const fromShop = SHOP[product];
+  const price = fromShop ? fromShop.price : Number(body?.price);
+  if (!Number.isFinite(price) || price < 0.5 || price > 500) {
+    return json({ error: "unknown product or price must be 0.5-500 USDT" }, 400);
+  }
+  const order = await makeOrder(env, fromShop ? product : String(body?.product || "custom").slice(0, 80), price);
   if (!order) return json({ error: "no unique amount available, retry" }, 503);
   return json({
     order_id: order.id,
@@ -52,7 +59,7 @@ async function createOrder(env, body) {
     network: env.NETWORK,
     address: env.WALLET,
     expires_at: new Date(order.expires).toISOString(),
-    how: `Send EXACTLY ${order.amount} ${env.ASSET} on ${env.NETWORK} to the address. Payment auto-detected on-chain.`,
+    how: `Send EXACTLY ${order.amount} ${env.ASSET} on ${env.NETWORK}. Auto-detected on-chain.`,
   });
 }
 
@@ -64,13 +71,55 @@ async function getOrder(env, id) {
     o.status = "expired";
     await env.ORDERS.put(`order:${id}`, JSON.stringify(o), { expirationTtl: 3600 });
   }
-  return json({ order_id: o.id, status: o.status, product: o.product, pay_exact: o.amount, paid_tx: o.tx || null });
+  const out = { order_id: o.id, status: o.status, product: o.product, pay_exact: o.amount, paid_tx: o.tx || null };
+  if (o.status === "paid" && o.access_key) out.access_key = o.access_key;
+  if (o.status === "paid" && o.credits != null) out.credits = o.credits;
+  return json(out);
 }
 
 async function getEvents(env, since) {
   const raw = (await env.ORDERS.get("events", { type: "json" })) || [];
   const t = since ? Date.parse(since) || 0 : 0;
   return json({ events: raw.filter((e) => Date.parse(e.ts) > t) });
+}
+
+async function provision(env, order) {
+  if (!order.product.startsWith("paykit")) return;
+  const key = `pk_live_${crypto.randomUUID().replaceAll("-", "")}`;
+  order.access_key = key;
+  order.credits = 100;
+  await env.ORDERS.put(`key:${key}`, JSON.stringify({ key, credits: 100, created: Date.now() }), {
+    expirationTtl: 86400 * 365,
+  });
+}
+
+async function useInvoice(env, request) {
+  const auth = request.headers.get("authorization") || "";
+  const key = auth.replace(/^Bearer\s+/i, "").trim();
+  if (!key.startsWith("pk_live_")) return json({ error: "missing bearer key" }, 401);
+  const raw = await env.ORDERS.get(`key:${key}`);
+  if (!raw) return json({ error: "invalid key" }, 401);
+  const acct = JSON.parse(raw);
+  if (acct.credits < 1) return json({ error: "no credits left" }, 402);
+  const body = await request.json().catch(() => null);
+  const price = Number(body?.price);
+  const product = String(body?.product || "item").slice(0, 80);
+  if (!Number.isFinite(price) || price < 0.5 || price > 500) {
+    return json({ error: "price must be 0.5-500 USDT" }, 400);
+  }
+  const order = await makeOrder(env, product, price);
+  if (!order) return json({ error: "no unique amount available, retry" }, 503);
+  acct.credits -= 1;
+  await env.ORDERS.put(`key:${key}`, JSON.stringify(acct), { expirationTtl: 86400 * 365 });
+  return json({
+    order_id: order.id,
+    pay_exact: order.amount,
+    address: env.WALLET,
+    network: env.NETWORK,
+    asset: env.ASSET,
+    expires_at: new Date(order.expires).toISOString(),
+    credits_left: acct.credits,
+  });
 }
 
 async function verify(env) {
@@ -90,18 +139,15 @@ async function verify(env) {
   }
   if (!orders.length) return 0;
 
-  const r = await fetch(
-    `https://api.trongrid.io/v1/accounts/${env.WALLET}/transactions/trc20?only_to=true&limit=50`,
-    { headers: { accept: "application/json" } }
-  );
+  const src = env.VERIFY_MOCK_URL || `https://api.trongrid.io/v1/accounts/${env.WALLET}/transactions/trc20?only_to=true&limit=50`;
+  const r = await fetch(src, { headers: { accept: "application/json" } });
   if (!r.ok) return 0;
   const { data = [] } = await r.json();
 
   let paid = 0;
   for (const tx of data) {
     if (tx.token_info?.address && tx.token_info.address !== USDT_CONTRACT) continue;
-    const seen = await env.ORDERS.get(`seen:${tx.transaction_id}`);
-    if (seen) continue;
+    if (await env.ORDERS.get(`seen:${tx.transaction_id}`)) continue;
     const value = Number(tx.value);
     if (!Number.isFinite(value) || value <= 0) continue;
     const amountStr = (value / 1e6).toFixed(6);
@@ -113,6 +159,7 @@ async function verify(env) {
     match.tx = tx.transaction_id;
     match.paidAt = new Date(txTime).toISOString();
     match.payer = tx.from;
+    await provision(env, match);
     await env.ORDERS.put(`order:${match.id}`, JSON.stringify(match), { expirationTtl: 86400 * 30 });
     await env.ORDERS.put(`amt:${match.amount}`, match.id, { expirationTtl: 86400 * 30 });
     await env.ORDERS.put(`seen:${tx.transaction_id}`, match.id, { expirationTtl: 86400 * 30 });
@@ -130,23 +177,78 @@ async function verify(env) {
     while (events.length > 500) events.shift();
     await env.ORDERS.put("events", JSON.stringify(events));
 
-    await tg(env, `💰 PAID ${match.price} ${env.ASSET} — ${match.product}\ntx: ${tx.transaction_id}`);
+    await tg(
+      env,
+      `💰 PAID ${match.price} ${env.ASSET} — ${match.product}\ntx: ${tx.transaction_id}` +
+        (match.access_key ? `\nkey: ${match.access_key}` : "")
+    );
     paid++;
     orders.splice(orders.indexOf(match), 1);
   }
   return paid;
 }
 
-const page = (env) =>
+const page = (env, body, title = "EARN-OR-DIE") =>
   new Response(
-    `<!doctype html><meta charset="utf-8"><title>EARN-OR-DIE pay rail</title>
-<body style="font-family:system-ui;background:#0b0f14;color:#d7f5e9;padding:40px;max-width:640px">
-<h1>💰 EARN-OR-DIE — payment rail</h1>
-<p>status: <b style="color:#4ade80">LIVE</b> · on-chain verification (no gateway, no KYC)</p>
-<p>pay to: <code style="user-select:all">${env.WALLET}</code> (${env.NETWORK} ${env.ASSET})</p>
-<p>orders: <code>POST /order {product, price}</code> · check: <code>GET /order?id=</code> · events: <code>GET /events?since=</code></p>
-</body>`,
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title>
+<style>
+body{font-family:system-ui;background:#0b0f14;color:#d7f5e9;margin:0;padding:40px 20px}
+main{max-width:640px;margin:auto}
+h1{font-size:1.6rem}code,.amt{background:#132029;padding:2px 8px;border-radius:6px;user-select:all}
+.card{border:1px solid #1e3a2f;border-radius:14px;padding:20px;margin:18px 0;background:#0e151c}
+button{background:#16a34a;border:0;color:#fff;font-size:1rem;padding:12px 22px;border-radius:10px;cursor:pointer}
+.muted{color:#6b8f7e;font-size:.9rem}#out{white-space:pre-wrap;font-family:ui-monospace,monospace}
+</style><main>${body}</main>`,
     { headers: { "content-type": "text/html; charset=utf-8" } }
+  );
+
+const shopPage = (env) =>
+  page(
+    env,
+    `<h1>🧾 CryptoPay API</h1>
+<div class="card">
+<b>Accept USDT — no gateway, no KYC, no country block.</b>
+<p>Exact-amount invoices + automatic on-chain verification on TRC-20. Money lands straight in your wallet.</p>
+<p><span class="amt">$3</span> — 100 invoice credits · key valid forever</p>
+<button onclick="buy()">Buy now</button>
+<div id="out" class="muted"></div>
+</div>
+<p class="muted">payout: <code>${env.WALLET}</code> (${env.NETWORK})</p>
+<script>
+let oid=null,amt=null,timer=null;
+async function buy(){
+  const out=document.getElementById('out');
+  out.textContent='creating order...';
+  const r=await fetch('/order',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({product:'paykit-100'})});
+  const j=await r.json();
+  if(j.error){out.textContent=j.error;return}
+  oid=j.order_id;amt=j.pay_exact;
+  out.textContent='PAY EXACTLY '+amt+' USDT ('+j.network+')\\nto: '+j.address+'\\n\\nwaiting for on-chain confirmation...';
+  clearInterval(timer);
+  timer=setInterval(check,4000);
+}
+async function check(){
+  const out=document.getElementById('out');
+  const r=await fetch('/order?id='+oid);
+  const j=await r.json();
+  if(j.status==='paid'){
+    clearInterval(timer);
+    out.textContent='PAID ✓\\n\\nYOUR API KEY:\\n'+(j.access_key||'')+'\\n\\ncredits: '+j.credits+'\\n\\nEndpoint: POST /v1/invoice (Bearer key, body {product,price})';
+  } else if(j.status==='expired'){clearInterval(timer);out.textContent='order expired — buy again'}
+}
+</script>`
+  );
+
+const statusPage = (env) =>
+  page(
+    env,
+    `<h1>💰 EARN-OR-DIE — payment rail</h1>
+<div class="card">status: <b style="color:#4ade80">LIVE</b> · on-chain verification (no gateway, no KYC)<br>
+pay to: <code>${env.WALLET}</code> (${env.NETWORK} ${env.ASSET})<br>
+<a style="color:#4ade80" href="/shop">→ shop</a><br>
+<small class="muted">orders: POST /order · check GET /order?id= · events GET /events?since= · api POST /v1/invoice</small></div>`,
+    "EARN-OR-DIE pay rail"
   );
 
 export default {
@@ -162,11 +264,17 @@ export default {
       if (request.method === "GET" && url.pathname === "/events") {
         return await getEvents(env, url.searchParams.get("since"));
       }
+      if (request.method === "POST" && url.pathname === "/v1/invoice") {
+        return await useInvoice(env, request);
+      }
       if (request.method === "GET" && url.pathname === "/verify") {
         return json({ checked: await verify(env) });
       }
+      if (request.method === "GET" && url.pathname === "/shop") {
+        return shopPage(env);
+      }
       if (request.method === "GET" && url.pathname === "/") {
-        return page(env);
+        return statusPage(env);
       }
       return json({ error: "not found" }, 404);
     } catch (e) {

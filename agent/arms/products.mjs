@@ -40,7 +40,8 @@ export async function run(config, state) {
     notes: [
       "on-chain USDT TRC-20 verification (no gateway, no KYC, no country block)",
       "rail: " + WORKER,
-      "first product: still building — rail is ready before storefront",
+      "product 1 LIVE: CryptoPay API $3/100 credits → " + WORKER + "/shop",
+      "next: distribution — owner shares /shop link once",
     ],
     events: applied,
   };
