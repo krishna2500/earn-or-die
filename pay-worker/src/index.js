@@ -157,7 +157,7 @@ async function useInvoice(env, request) {
 }
 
 async function verify(env) {
-  const list = await env.ORDERS.list({ prefix: "order:", limit: 200 });
+  const list = await env.ORDERS.list({ prefix: "order:", limit: 30 });
   const orders = [];
   for (const k of list.keys) {
     const raw = await env.ORDERS.get(k.name);
@@ -169,7 +169,7 @@ async function verify(env) {
       continue;
     }
     if (o.status === "pending") orders.push(o);
-    if (orders.length >= MAX_PENDING) break;
+    if (orders.length >= 30) break;
   }
   if (!orders.length) return 0;
 
@@ -294,42 +294,70 @@ pay to: <code>${env.WALLET}</code> (${env.NETWORK} ${env.ASSET})<br>
   );
 
 async function ghRuns(env, workflowFile) {
-  const r = await fetch(`https://api.github.com/repos/krishna2500/earn-or-die/actions/workflows/${workflowFile}/runs?per_page=1`, {
-    headers: { authorization: `Bearer ${env.GH_TOKEN}`, accept: "application/vnd.github+json" },
-  });
-  if (!r.ok) return null;
-  const j = await r.json();
-  return j.workflow_runs?.[0]?.created_at || null;
-}
-
-async function agentWatchdog(env) {
-  if (!env.GH_TOKEN) return;
-  const jobs = [
-    { wf: "agent.yml", staleMs: 6.5 * 3600 * 1000, cdKey: "meta:cd_core", label: "core cycle" },
-    { wf: "scout.yml", staleMs: 50 * 60 * 1000, cdKey: "meta:cd_scout", label: "scout" },
-  ];
-  for (const j of jobs) {
-    const cd = Number((await env.ORDERS.get(j.cdKey)) || 0);
-    if (Date.now() - cd < 60 * 60 * 1000) continue;
-    const last = await ghRuns(env, j.wf);
-    if (!last) continue;
-    if (Date.now() - Date.parse(last) < j.staleMs) continue;
-    await env.ORDERS.put(j.cdKey, String(Date.now()));
-    const d = await fetch(`https://api.github.com/repos/krishna2500/earn-or-die/actions/workflows/${j.wf}/dispatches`, {
-      method: "POST",
+  try {
+    const r = await fetch(`https://api.github.com/repos/krishna2500/earn-or-die/actions/workflows/${workflowFile}/runs?per_page=1`, {
       headers: {
         authorization: `Bearer ${env.GH_TOKEN}`,
         accept: "application/vnd.github+json",
-        "content-type": "application/json",
+        "user-agent": "earn-or-die-worker/1.0",
       },
-      body: JSON.stringify({ ref: "main" }),
     });
-    if (d.ok || d.status === 204) {
-      await tg(env, `⏱ watchdog: ${j.label} stale — dispatched ${j.wf}`);
-    } else if (d.status === 404) {
-      await tg(env, `⏱ watchdog: ${j.wf} gone (dead or removed) — standing down`);
-    }
+    const text = await r.text();
+    let last = null;
+    try {
+      last = JSON.parse(text).workflow_runs?.[0]?.created_at || null;
+    } catch {}
+    return { status: r.status, last, body: last ? null : text.slice(0, 160) };
+  } catch (e) {
+    return { status: 0, last: null, body: String(e?.message || e).slice(0, 160) };
   }
+}
+
+async function agentWatchdog(env) {
+  const diag = { at: new Date().toISOString(), gh: !!env.GH_TOKEN };
+  try {
+    if (env.GH_TOKEN) {
+      const jobs = [
+        { wf: "agent.yml", staleMs: 6.5 * 3600 * 1000, cdKey: "meta:cd_core", label: "core cycle" },
+        { wf: "scout.yml", staleMs: 50 * 60 * 1000, cdKey: "meta:cd_scout", label: "scout" },
+      ];
+      diag.jobs = [];
+      for (const j of jobs) {
+        const cd = Number((await env.ORDERS.get(j.cdKey)) || 0);
+        const runs = await ghRuns(env, j.wf);
+        const last = runs.last;
+        const ageMin = last ? Math.round((Date.now() - Date.parse(last)) / 60000) : null;
+        const entry = { wf: j.wf, st: runs.status, last, ageMin, cdSet: cd > 0 };
+        if (runs.body) entry.body = runs.body;
+        diag.jobs.push(entry);
+        if (Date.now() - cd < 60 * 60 * 1000) { entry.action = "cooldown"; continue; }
+        if (!last) { entry.action = "no-run-data"; continue; }
+        if (Date.now() - Date.parse(last) < j.staleMs) { entry.action = "fresh"; continue; }
+        await env.ORDERS.put(j.cdKey, String(Date.now()));
+        const d = await fetch(`https://api.github.com/repos/krishna2500/earn-or-die/actions/workflows/${j.wf}/dispatches`, {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${env.GH_TOKEN}`,
+            accept: "application/vnd.github+json",
+            "content-type": "application/json",
+            "user-agent": "earn-or-die-worker/1.0",
+          },
+          body: JSON.stringify({ ref: "main" }),
+        });
+        entry.action = `dispatch:${d.status}`;
+        if (d.ok || d.status === 204) {
+          await tg(env, `⏱ watchdog: ${j.label} stale — dispatched ${j.wf}`);
+        } else if (d.status === 404) {
+          await tg(env, `⏱ watchdog: ${j.wf} gone (dead or removed) — standing down`);
+        }
+      }
+    } else {
+      diag.action = "GH_TOKEN missing";
+    }
+  } catch (e) {
+    diag.error = String(e?.message || e).slice(0, 200);
+  }
+  await env.ORDERS.put("meta:wd_last", JSON.stringify(diag), { expirationTtl: 3600 * 24 });
 }
 
 async function manualVerify(env, url) {
@@ -359,11 +387,13 @@ export default {
         const ts = Number((await env.ORDERS.get("meta:last_scheduled")) || 0);
         const day = new Date().toISOString().slice(0, 10);
         const hits = Number((await env.ORDERS.get(`hits:${day}`)) || 0);
+        const wd = await env.ORDERS.get("meta:wd_last", { type: "json" });
         return json({
           ok: true,
           last_scheduled: ts ? new Date(ts).toISOString() : null,
           age_s: ts ? Math.round((Date.now() - ts) / 1000) : null,
           hits_today: hits,
+          watchdog: wd || null,
         });
       }
       if (request.method === "POST" && url.pathname === "/order") {

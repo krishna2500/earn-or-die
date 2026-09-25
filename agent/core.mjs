@@ -37,6 +37,8 @@ if (state.status !== "dead") {
 }
 
 const summary = { daysAlive, daysSinceRev, status: state.status, found: 0, recorded: 0, arms: {} };
+state.daysAlive = daysAlive;
+state.daysSinceRev = daysSinceRev;
 const FAST = !!process.env.FAST_ARM;
 const list = config.arms.filter((a) => a.enabled && (!FAST || a.id === process.env.FAST_ARM));
 let changed = false;

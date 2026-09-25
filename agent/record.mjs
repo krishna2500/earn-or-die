@@ -7,15 +7,20 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 export function applyEntry(config, state, ledger, entry) {
   ledger.push(entry);
   const a = config.allocation;
-  if (entry.currency === "USDT" || entry.currency === "USD") {
+  const isMoney = entry.currency === "USDT" || entry.currency === "USD";
+  if (isMoney) {
     state.totalRevenue = (state.totalRevenue || 0) + entry.amount;
+    state.lastRevenueAt = entry.ts;
+    if (state.status !== "dead") state.status = "alive";
+    state.budgets = state.budgets || { reinvest: 0, reserve: 0, ownerPayout: 0 };
+    state.budgets.reinvest = +(state.budgets.reinvest + entry.amount * a.reinvest).toFixed(4);
+    state.budgets.reserve = +(state.budgets.reserve + entry.amount * a.reserve).toFixed(4);
+    state.budgets.ownerPayout = +(state.budgets.ownerPayout + entry.amount * a.ownerPayout).toFixed(4);
+  } else {
+    // non-USD bounty (EUR etc.): track in ledger only — budgets are USDT-denominated
+    state.lastRevenueAt = entry.ts;
+    if (state.status !== "dead") state.status = "alive";
   }
-  state.lastRevenueAt = entry.ts;
-  if (state.status !== "dead") state.status = "alive";
-  state.budgets = state.budgets || { reinvest: 0, reserve: 0, ownerPayout: 0 };
-  state.budgets.reinvest = +(state.budgets.reinvest + entry.amount * a.reinvest).toFixed(4);
-  state.budgets.reserve = +(state.budgets.reserve + entry.amount * a.reserve).toFixed(4);
-  state.budgets.ownerPayout = +(state.budgets.ownerPayout + entry.amount * a.ownerPayout).toFixed(4);
   return entry;
 }
 

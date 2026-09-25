@@ -159,6 +159,15 @@ async function attemptBounty(config, state, token, log) {
       if (pr.status !== 201) throw new Error(`pr ${pr.status}`);
       prs.items.push({ issue: b.url, pr: pr.data.html_url, at: new Date().toISOString(), files: targets, verdict: strat.strategy });
       write(PRS, prs);
+      const fq = read(`${OUT}/fixqueue.json`, null);
+      if (fq?.items) {
+        const item = fq.items.find((i) => i.url === b.url);
+        if (item) {
+          item.status = "pr-open";
+          item.pr = pr.data.html_url;
+          write(`${OUT}/fixqueue.json`, fq);
+        }
+      }
       log.push(`PR OPENED ${pr.data.html_url}`);
       return { ok: true, status: `PR: ${pr.data.html_url}`, pr: pr.data.html_url };
     } catch (e) {

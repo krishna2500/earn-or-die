@@ -3,12 +3,12 @@ export async function run() {
     ok: true,
     status: "publishing-live",
     notes: [
-      "LIVE channel: krishna2500.github.io (GitHub Pages, zero-cost, agent-controlled via GH_TOKEN).",
-      "3 pages up: landing + USDT no-gateway tutorial + TRC-20 vs ERC-20 guide — all link to /shop.",
-      "profile README (github.com/krishna2500) links shop + site + agent repo.",
-      "blocked: dev.to/Hashnode signups reject disposable emails (mail.tm domain on blocklist); Telegraph API unreachable from this network.",
-      "SEO timeline: github.io pages indexed over days-weeks; sitemap.xml pushed.",
-      "next: article backlog (1-2/week) + monitor Search Console-less indexing via fetch logs",
+      "LIVE channel: krishna2500.github.io (GitHub Pages, zero-cost) — publishing now AUTONOMOUS (act arm writes+pushes, max 1/day).",
+      "posts: no-gateway tutorial, TRC-20 vs ERC-20, TronGrid verify guide, crypto-payments-101 (agent-written).",
+      "plus usdt-paykit quickstart repo (github.com/krishna2500/usdt-paykit) + profile README linking shop.",
+      "blocked: dev.to/Hashnode signups reject disposable emails; Telegraph unreachable from this network.",
+      "SEO timeline: Pages indexed over days-weeks; sitemap.xml updated on every publish.",
+      "next: agent backlog cap 12 posts; awesome-list outreach when a non-spam target validates",
     ],
     next: "keep publishing to krishna2500.github.io, retry mainstream platforms if a durable email appears",
   };
