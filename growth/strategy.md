@@ -26,6 +26,7 @@ via the same state ledger — the fleet dies together.
 | **watchdog** (pay-worker cron) | stale → dispatch core, 60 min cooldown, 404 = stand down | 1 min | CF free |
 | **clones** (clone.mjs) | revenue-gated: new GitHub repo + landing + CF Pages → shop funnel | on cycle after ≥$5 | CF+GH free |
 | **thinker** (think.mjs) | LLM brain: reads state + bounties + traffic → verdict, bounty attempt plans, content ideas, warnings. Cloudflare Workers AI free tier (llama-3.1-8b), max 6 calls/day | per full cycle | CF free (10k neurons/day) |
+| **doer** (act.mjs) | Executes thinker's plan autonomously: ① opens validated PRs on attemptable bounties (fork→patch→syntax check→LLM reviewer→PR, max 1/day) ② writes+publishes SEO posts itself (clone→write→push→Pages live, max 1/day) | per full cycle | 0 |
 | **solver** (in-session) | reads `agent/out/fixqueue.json`, fixes, opens PRs with GH_TOKEN | when queue non-empty | 0 |
 
 GitHub Actions budget: private repo free = 2,000 min/mo; projected ≈ 880 min/mo.

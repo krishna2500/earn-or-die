@@ -32,6 +32,7 @@ jobs:
           exit $code
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_OWNER_CHAT: ${{ secrets.TG_OWNER_CHAT }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
