@@ -27,6 +27,7 @@
 | Agent | Job | Cadence |
 |---|---|---|
 | `agent.yml` (core) | full cycle, ledger, kill rule, fleet clone check, TG digest | every 6h + watchdog |
+| **thinker** (`think.mjs`) | LLM brain (Workers AI free) — verdicts, bounty attempt plans, warnings → `out/plan.json` | every 6h cycle (≤6 calls/day) |
 | `scout.yml` | bounties arm only — quiet unless actionable bounty found (then TG) | every 30 min |
 | `pay-worker` watchdog | stale core → manual dispatch, 404 → stand down | every minute |
 | `clone.mjs` | **revenue-gated clones**: after first $5, spins new niche repo + landing + CF Pages → same shop | auto on cycle |

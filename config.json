@@ -4,6 +4,7 @@
   "killRule": { "dyingAfterDays": 45, "deadAfterDays": 90 },
   "arms": [
     { "id": "bounties", "enabled": true, "label": "OSS bounties — scout, solve, claim" },
+    { "id": "think", "enabled": true, "label": "Strategist (GitHub Models LLM) — plans what to attempt" },
     { "id": "content", "enabled": true, "label": "SEO/affiliate content (research phase)" },
     { "id": "products", "enabled": true, "label": "Micro-products with crypto checkout" }
   ],

@@ -340,15 +340,30 @@ async function manualVerify(env, url) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (ctx?.waitUntil) {
+      const day = new Date().toISOString().slice(0, 10);
+      ctx.waitUntil(
+        (async () => {
+          try {
+            const k = `hits:${day}`;
+            const n = Number((await env.ORDERS.get(k)) || 0) + 1;
+            await env.ORDERS.put(k, String(n), { expirationTtl: 60 * 60 * 24 * 14 });
+          } catch {}
+        })()
+      );
+    }
     try {
       if (request.method === "GET" && url.pathname === "/healthz") {
         const ts = Number((await env.ORDERS.get("meta:last_scheduled")) || 0);
+        const day = new Date().toISOString().slice(0, 10);
+        const hits = Number((await env.ORDERS.get(`hits:${day}`)) || 0);
         return json({
           ok: true,
           last_scheduled: ts ? new Date(ts).toISOString() : null,
           age_s: ts ? Math.round((Date.now() - ts) / 1000) : null,
+          hits_today: hits,
         });
       }
       if (request.method === "POST" && url.pathname === "/order") {
