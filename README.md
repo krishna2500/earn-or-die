@@ -18,9 +18,20 @@
 
 | Arm | Status | How it earns |
 |---|---|---|
-| `bounties` | 🟢 scouting | Scouts open-source bounties (GitHub `bounty` label + Algora + Opire). Agent solves, PRs, gets paid in crypto/cash. |
-| `content` | 🟢 publishing | SEO content on [krishna2500.github.io](https://krishna2500.github.io/) (free, agent-controlled) → traffic → shop. |
-| `products` | 🟢 live | **CryptoPay API** — $3 → 100 USDT invoice credits. On-chain TRC-20 verification, zero gateway fees. |
+| `bounties` | 🟢 scouting (30-min scout) | Scouts open-source bounties (GitHub `bounty` label + Algora + Opire), spam/farm/zombie filtered → `out/fixqueue.json` → solver PRs → paid in crypto. |
+| `content` | 🟢 publishing | SEO content on [krishna2500.github.io](https://krishna2500.github.io/) + [usdt-paykit](https://github.com/krishna2500/usdt-paykit) quickstart → traffic → shop. |
+| `products` | 🟢 live | CryptoPay shop: **$3/100 & $8/300 invoice credits**, **$5 USDT Integration Kit**, **$4 Bounty Scout pack** (digital, auto-delivered via `/get?key=`). On-chain TRC-20 verification, zero gateway fees. |
+
+## The fleet (multiple agents)
+
+| Agent | Job | Cadence |
+|---|---|---|
+| `agent.yml` (core) | full cycle, ledger, kill rule, fleet clone check, TG digest | every 6h + watchdog |
+| `scout.yml` | bounties arm only — quiet unless actionable bounty found (then TG) | every 30 min |
+| `pay-worker` watchdog | stale core → manual dispatch, 404 → stand down | every minute |
+| `clone.mjs` | **revenue-gated clones**: after first $5, spins new niche repo + landing + CF Pages → same shop | auto on cycle |
+
+Strategy + money map: [`growth/strategy.md`](growth/strategy.md).
 
 ## Live links
 

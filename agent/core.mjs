@@ -37,9 +37,12 @@ if (state.status !== "dead") {
 }
 
 const summary = { daysAlive, daysSinceRev, status: state.status, found: 0, recorded: 0, arms: {} };
+const FAST = !!process.env.FAST_ARM;
+const list = config.arms.filter((a) => a.enabled && (!FAST || a.id === process.env.FAST_ARM));
+let changed = false;
 
 if (state.status !== "dead") {
-  for (const arm of config.arms.filter((a) => a.enabled)) {
+  for (const arm of list) {
     try {
       const mod = await import(`${HERE}/arms/${arm.id}.mjs`);
       const result = await mod.run(config, state);
@@ -47,6 +50,7 @@ if (state.status !== "dead") {
       state.armStatus[arm.id] = { at: new Date().toISOString(), ...stored };
       summary.arms[arm.id] = stored;
       if (arm.id === "bounties" && result?.candidates) summary.found = result.candidates.length;
+      if (result?.changed) changed = true;
       if (Array.isArray(events) && events.length) {
         const { applyEntry } = await import(`${HERE}/record.mjs`);
         for (const ev of events) {
@@ -75,15 +79,33 @@ if (state.status !== "dead") {
   summary.arms.skipped = "agent is DEAD — arms not run";
 }
 
-state.cycle += 1;
+// fleet: clone a new niche storefront only after real revenue (config.fleet.cloneAfterUSD)
+if (!FAST && state.status !== "dead" && (state.totalRevenue || 0) >= (config.fleet?.cloneAfterUSD ?? Infinity)) {
+  try {
+    const fleet = await import(`${HERE}/clone.mjs`);
+    summary.fleet = await fleet.run(config, state);
+  } catch (e) {
+    summary.fleet = { ok: false, error: String(e?.message || e).slice(0, 200) };
+  }
+}
+
+// quiet fast-scout run: nothing new → touch nothing (no state write, no commit, no TG)
+if (FAST && state.status !== "dead" && summary.found === 0 && !changed) {
+  console.log(JSON.stringify({ fast: process.env.FAST_ARM, cycle: state.cycle, status: state.status, found: 0, quiet: true }));
+  process.exit(0);
+}
+
+if (!FAST) state.cycle += 1;
 write(`${HERE}/state/state.json`, state);
 
-// ---- report (best effort) ----
-try {
-  const { report } = await import(`${HERE}/arms/report.mjs`);
-  await report(state, summary, config, ledger);
-} catch (e) {
-  console.log("report skipped:", String(e?.message || e));
+// ---- report: every full cycle; fast-scout only when actionable bounty found ----
+if (!FAST || summary.found > 0) {
+  try {
+    const { report } = await import(`${HERE}/arms/report.mjs`);
+    await report(state, summary, config, ledger);
+  } catch (e) {
+    console.log("report skipped:", String(e?.message || e));
+  }
 }
 
 console.log(JSON.stringify({ cycle: state.cycle, ...summary }, null, 2));

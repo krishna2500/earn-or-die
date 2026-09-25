@@ -35,7 +35,7 @@ export async function run(config, state) {
     ok: true,
     status: "checkout-rail-live",
     rail,
-    lastEventSince: new Date().toISOString(),
+    lastEventSince: new Date(Date.now() - 30000).toISOString(),
     newPayments: applied.length,
     notes: [
       "on-chain USDT TRC-20 verification (no gateway, no KYC, no country block)",

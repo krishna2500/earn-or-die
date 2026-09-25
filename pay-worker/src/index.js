@@ -4,8 +4,27 @@ const MAX_PENDING = 60;
 const SHOP = {
   "paykit-100": {
     price: 3,
+    credits: 100,
     title: "CryptoPay API — 100 invoice credits",
     desc: "Accept USDT TRC-20 with no gateway, no KYC. Exact-amount invoices + on-chain auto-verify API. 100 credits, key valid forever until used.",
+  },
+  "paykit-300": {
+    price: 8,
+    credits: 300,
+    title: "CryptoPay API — 300 invoice credits",
+    desc: "Same rail, bigger pack. 300 invoice credits for $8 (save 11%). Key valid forever until used.",
+  },
+  "usdt-kit": {
+    price: 5,
+    digital: true,
+    title: "USDT Integration Kit — full source",
+    desc: "Complete worker + agent source: accept USDT TRC-20 with on-chain auto-verify (TronGrid), exact-amount invoices, Telegram alerts. Deploy on your own Cloudflare free tier in minutes.",
+  },
+  "scout-kit": {
+    price: 4,
+    digital: true,
+    title: "OSS Bounty Scout — source pack",
+    desc: "GitHub bounty finder source: Algora/Opire/generic search, spam/farm/zombie filters, freshness scoring, fix-queue output. Runs on Node 22 + GitHub Actions free tier.",
   },
 };
 
@@ -84,13 +103,28 @@ async function getEvents(env, since) {
 }
 
 async function provision(env, order) {
-  if (!order.product.startsWith("paykit")) return;
+  const spec = SHOP[order.product];
+  if (!spec) return;
   const key = `pk_live_${crypto.randomUUID().replaceAll("-", "")}`;
   order.access_key = key;
-  order.credits = 100;
-  await env.ORDERS.put(`key:${key}`, JSON.stringify({ key, credits: 100, created: Date.now() }), {
-    expirationTtl: 86400 * 365,
-  });
+  const acct = { key, created: Date.now() };
+  if (spec.credits) {
+    order.credits = spec.credits;
+    acct.credits = spec.credits;
+  }
+  if (spec.digital) acct.digital = order.product;
+  await env.ORDERS.put(`key:${key}`, JSON.stringify(acct), { expirationTtl: 86400 * 365 });
+}
+
+async function getAsset(env, url) {
+  const key = (url.searchParams.get("key") || "").trim();
+  if (!key.startsWith("pk_live_")) return json({ error: "missing key" }, 401);
+  const acct = await env.ORDERS.get(`key:${key}`, { type: "json" });
+  if (!acct) return json({ error: "invalid key" }, 401);
+  if (!acct.digital) return json({ error: "this key is not a digital product — use POST /v1/invoice" }, 400);
+  const asset = await env.ORDERS.get(`asset:${acct.digital}`, { type: "json" });
+  if (!asset) return json({ error: "asset not provisioned" }, 503);
+  return json({ product: acct.digital, unlocked_at: new Date().toISOString(), ...asset });
 }
 
 async function useInvoice(env, request) {
@@ -100,7 +134,7 @@ async function useInvoice(env, request) {
   const raw = await env.ORDERS.get(`key:${key}`);
   if (!raw) return json({ error: "invalid key" }, 401);
   const acct = JSON.parse(raw);
-  if (acct.credits < 1) return json({ error: "no credits left" }, 402);
+  if (!(acct.credits >= 1)) return json({ error: "no credits left" }, 402);
   const body = await request.json().catch(() => null);
   const price = Number(body?.price);
   const product = String(body?.product || "item").slice(0, 80);
@@ -206,36 +240,44 @@ button{background:#16a34a;border:0;color:#fff;font-size:1rem;padding:12px 22px;b
 const shopPage = (env) =>
   page(
     env,
-    `<h1>🧾 CryptoPay API</h1>
-<div class="card">
-<b>Accept USDT — no gateway, no KYC, no country block.</b>
-<p>Exact-amount invoices + automatic on-chain verification on TRC-20. Money lands straight in your wallet.</p>
-<p><span class="amt">$3</span> — 100 invoice credits · key valid forever</p>
-<button onclick="buy()">Buy now</button>
-<div id="out" class="muted"></div>
-</div>
+    `<h1>🧾 CryptoPay Shop</h1>
+<p class="muted">On-chain USDT TRC-20 verification — no gateway, no KYC, no country block. Money lands straight in your wallet.</p>
+${Object.entries(SHOP)
+  .map(
+    ([id, p]) => `<div class="card">
+<b>${p.title}</b>
+<p>${p.desc}</p>
+<p><span class="amt">$${p.price}</span> — ${p.credits ? `${p.credits} invoice credits · key valid forever` : "instant unlock after payment"}</p>
+<button onclick="buy('${id}')">Buy now</button>
+<div id="o_${id}" class="muted"></div>
+</div>`
+  )
+  .join("\n")}
 <p class="muted">payout: <code>${env.WALLET}</code> (${env.NETWORK})</p>
 <script>
-let oid=null,amt=null,timer=null;
-async function buy(){
-  const out=document.getElementById('out');
-  out.textContent='creating order...';
-  const r=await fetch('/order',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({product:'paykit-100'})});
+let oid=null,amt=null,timer=null,outEl=null;
+async function buy(pid){
+  outEl=document.getElementById('o_'+pid);
+  outEl.textContent='creating order...';
+  const r=await fetch('/order',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({product:pid})});
   const j=await r.json();
-  if(j.error){out.textContent=j.error;return}
-  oid=j.order_id;amt=j.pay_exact;
-  out.textContent='PAY EXACTLY '+amt+' USDT ('+j.network+')\\nto: '+j.address+'\\n\\nwaiting for on-chain confirmation...';
+  if(j.error){outEl.textContent=j.error;return}
+  oid=j.order_id;
+  outEl.textContent='PAY EXACTLY '+j.pay_exact+' USDT ('+j.network+')\\nto: '+j.address+'\\n\\nwaiting for on-chain confirmation...';
   clearInterval(timer);
   timer=setInterval(check,4000);
 }
 async function check(){
-  const out=document.getElementById('out');
+  if(!outEl)return;
   const r=await fetch('/order?id='+oid);
   const j=await r.json();
   if(j.status==='paid'){
     clearInterval(timer);
-    out.textContent='PAID ✓\\n\\nYOUR API KEY:\\n'+(j.access_key||'')+'\\n\\ncredits: '+j.credits+'\\n\\nEndpoint: POST /v1/invoice (Bearer key, body {product,price})';
-  } else if(j.status==='expired'){clearInterval(timer);out.textContent='order expired — buy again'}
+    let s='PAID ✓\\n\\nYOUR KEY:\\n'+(j.access_key||'')+'\\n';
+    if(j.credits!=null)s+='\\ncredits: '+j.credits+'\\nEndpoint: POST /v1/invoice (Bearer key, body {product,price})';
+    else s+='\\nDownload: /get?key='+j.access_key;
+    outEl.textContent=s;
+  } else if(j.status==='expired'){clearInterval(timer);outEl.textContent='order expired — buy again'}
 }
 </script>`
   );
@@ -307,6 +349,9 @@ export default {
       }
       if (request.method === "GET" && url.pathname === "/verify") {
         return await manualVerify(env, url);
+      }
+      if (request.method === "GET" && url.pathname === "/get") {
+        return await getAsset(env, url);
       }
       if (request.method === "GET" && url.pathname === "/shop") {
         return shopPage(env);

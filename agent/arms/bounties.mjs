@@ -43,6 +43,10 @@ async function ghSearch(q, token) {
 export async function run() {
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   const seen = existsSync(SEEN) ? JSON.parse(readFileSync(SEEN, "utf8")) : {};
+  const seenBefore = Object.keys(seen).length;
+  const prevFresh = existsSync(`${OUT}/bounties.json`)
+    ? (JSON.parse(readFileSync(`${OUT}/bounties.json`, "utf8")).fresh || []).map((c) => c.url)
+    : [];
   const candidates = [];
   const add = (c) => {
     if (candidates.some((x) => x.url === c.url)) return;
@@ -74,6 +78,7 @@ export async function run() {
           created: it.created_at,
           updated: it.updated_at,
           labelCount: labels.length,
+          body: (it.body || "").slice(0, 1200),
         });
       }
       // farm marker: repo with huge open-bounty count
@@ -103,6 +108,7 @@ export async function run() {
           comments: issue.comments,
           created: issue.created_at,
           updated: issue.updated_at,
+          body: (issue.body || "").slice(0, 1200),
         });
         await new Promise((x) => setTimeout(x, 350));
       }
@@ -128,6 +134,7 @@ export async function run() {
         comments: it.comments,
         created: it.created_at,
         updated: it.updated_at,
+        body: (it.body || "").slice(0, 1200),
       });
     }
   } catch (e) {
@@ -184,38 +191,67 @@ export async function run() {
   for (const c of payable) c.score = score(c);
   const ranked = payable.sort((a, b) => b.score - a.score).slice(0, 25);
 
-  // update seen
+  // update seen (persist only when it grew)
   for (const c of candidates) if (c.url) seen[c.url] = seen[c.url] || iso(new Date());
-  mkdirSync(`${HERE}/../state`, { recursive: true });
-  writeFileSync(SEEN, JSON.stringify(seen, null, 2) + "\n");
+  if (Object.keys(seen).length > seenBefore) {
+    mkdirSync(`${HERE}/../state`, { recursive: true });
+    writeFileSync(SEEN, JSON.stringify(seen, null, 2) + "\n");
+  }
 
   mkdirSync(OUT, { recursive: true });
   const fresh = ranked.filter((c) => !c.dead && !c.farm && !c.zombie && c.score > 40);
-  writeFileSync(`${OUT}/bounties.json`, JSON.stringify({ fresh, all: ranked }, null, 2) + "\n");
-  const md = [
-    `# Bounty opportunities — ${new Date().toISOString()}`,
-    "",
-    `## ACTIONABLE (${fresh.length})`,
-    ...fresh.map(
-      (c, i) =>
-        `${i + 1}. **$${c.amount}** — [${c.title || c.url}](${c.url}) \`${c.source}\` · ${c.repo} · score ${c.score}${c.claims === 0 ? " · zero claims" : ""}`
-    ),
-    "",
-    `## WATCHLIST (deprioritized: ${ranked.length - fresh.length})`,
-    ...ranked
-      .filter((c) => !fresh.includes(c))
-      .map(
-        (c) =>
-          `- $${c.amount} [${c.title || c.url}](${c.url}) — ${c.dead ? "repo dead" : c.farm ? "farm" : c.zombie ? "zombie (no maintainer)" : "low score"}`
+  const freshUrls = fresh.map((c) => c.url);
+  const changed = JSON.stringify(freshUrls) !== JSON.stringify(prevFresh);
+
+  if (changed) {
+    writeFileSync(`${OUT}/bounties.json`, JSON.stringify({ fresh, all: ranked }, null, 2) + "\n");
+    // fix queue: what the solver agent should attempt (with issue body)
+    writeFileSync(
+      `${OUT}/fixqueue.json`,
+      JSON.stringify(
+        {
+          generated: new Date().toISOString(),
+          items: fresh.map((c) => ({
+            url: c.url,
+            repo: c.repo,
+            title: c.title,
+            amount: c.amount,
+            source: c.source,
+            score: c.score,
+            body: c.body || "",
+            status: "todo",
+          })),
+        },
+        null,
+        2
+      ) + "\n"
+    );
+    const md = [
+      `# Bounty opportunities — ${new Date().toISOString()}`,
+      "",
+      `## ACTIONABLE (${fresh.length})`,
+      ...fresh.map(
+        (c, i) =>
+          `${i + 1}. **$${c.amount}** — [${c.title || c.url}](${c.url}) \`${c.source}\` · ${c.repo} · score ${c.score}${c.claims === 0 ? " · zero claims" : ""}`
       ),
-  ].join("\n");
-  writeFileSync(`${OUT}/bounties.md`, md + "\n");
+      "",
+      `## WATCHLIST (deprioritized: ${ranked.length - fresh.length})`,
+      ...ranked
+        .filter((c) => !fresh.includes(c))
+        .map(
+          (c) =>
+            `- $${c.amount} [${c.title || c.url}](${c.url}) — ${c.dead ? "repo dead" : c.farm ? "farm" : c.zombie ? "zombie (no maintainer)" : "low score"}`
+        ),
+    ].join("\n");
+    writeFileSync(`${OUT}/bounties.md`, md + "\n");
+  }
 
   return {
     ok: true,
     total: candidates.length,
     payable: payable.length,
     actionable: fresh.length,
+    changed,
     candidates: fresh,
   };
 }

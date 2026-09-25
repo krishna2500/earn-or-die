@@ -7,5 +7,26 @@
     { "id": "content", "enabled": true, "label": "SEO/affiliate content (research phase)" },
     { "id": "products", "enabled": true, "label": "Micro-products with crypto checkout" }
   ],
-  "payout": { "network": "TRC-20", "asset": "USDT", "address": "TL5YPXfZvokPy2TMtULRXmXRkzYbmmvevy" }
+  "payout": { "network": "TRC-20", "asset": "USDT", "address": "TL5YPXfZvokPy2TMtULRXmXRkzYbmmvevy" },
+  "fleet": {
+    "cloneAfterUSD": 5,
+    "maxClones": 3,
+    "plan": [
+      {
+        "slug": "usdt-payment-kit",
+        "title": "USDT Payment Kit",
+        "pitch": "Accept USDT TRC-20 with zero gateway fees — on-chain auto-verification, no KYC, Cloudflare free tier."
+      },
+      {
+        "slug": "bounty-radar",
+        "title": "Bounty Radar",
+        "pitch": "Paid GitHub issues, scanned every 30 minutes. Spam/farm/zombie filtered. Fix queue included."
+      },
+      {
+        "slug": "web3-checkout-tools",
+        "title": "Web3 Checkout Tools",
+        "pitch": "Exact-amount crypto invoices + unique-amount trick + Telegram alerts. Source-level kits."
+      }
+    ]
+  }
 }
