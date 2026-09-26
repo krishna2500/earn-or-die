@@ -1,7 +1,11 @@
 {
   "born": "2026-09-25",
   "status": "alive",
+<<<<<<< HEAD
   "cycle": 19,
+=======
+  "cycle": 18,
+>>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
   "lastRevenueAt": null,
   "totalRevenue": 0,
   "budgets": {
@@ -11,7 +15,11 @@
   },
   "armStatus": {
     "bounties": {
+<<<<<<< HEAD
       "at": "2026-09-26T04:04:47.160Z",
+=======
+      "at": "2026-09-26T04:43:43.757Z",
+>>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "ok": true,
       "total": 68,
       "payable": 3,
@@ -20,7 +28,11 @@
       "candidates": []
     },
     "content": {
+<<<<<<< HEAD
       "at": "2026-09-26T04:04:56.086Z",
+=======
+      "at": "2026-09-26T04:44:04.986Z",
+>>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "ok": true,
       "status": "publishing-live",
       "notes": [
@@ -34,11 +46,19 @@
       "next": "keep publishing to krishna2500.github.io, retry mainstream platforms if a durable email appears"
     },
     "products": {
+<<<<<<< HEAD
       "at": "2026-09-26T04:04:56.231Z",
       "ok": true,
       "status": "checkout-rail-live",
       "rail": "live",
       "lastEventSince": "2026-09-26T04:04:26.231Z",
+=======
+      "at": "2026-09-26T04:44:06.051Z",
+      "ok": true,
+      "status": "checkout-rail-live",
+      "rail": "live",
+      "lastEventSince": "2026-09-26T04:43:36.051Z",
+>>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "newPayments": 0,
       "notes": [
         "on-chain USDT TRC-20 verification (no gateway, no KYC, no country block)",
@@ -48,22 +68,35 @@
       ]
     },
     "think": {
+<<<<<<< HEAD
       "at": "2026-09-26T04:04:49.250Z",
       "ok": true,
       "status": "High-priority bounties available",
+=======
+      "at": "2026-09-26T04:43:47.773Z",
+      "ok": true,
+      "status": "17 days in, no earnings",
+>>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "model": "@cf/meta/llama-3.1-8b-instruct",
       "date": "2026-09-26",
       "calls": 1,
       "attempts": 2,
       "content_ideas": 1,
       "warnings": [
+<<<<<<< HEAD
         "Avoid low-scoring bounties like https://github.com/trovu/trovu/issues/329"
       ],
       "verdict": "High-priority bounties available",
+=======
+        "No earned USDT yet, be cautious of time"
+      ],
+      "verdict": "17 days in, no earnings",
+>>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "bounty_plan": [
         {
           "url": "https://github.com/radumarias/rencfs/issues/3",
           "attempt": true,
+<<<<<<< HEAD
           "approach": "Submit research implementation for Windows as a PR with clear documentation and tests",
           "difficulty": "medium"
         },
@@ -72,10 +105,27 @@
           "attempt": true,
           "approach": "Implement ABNF-compliant email address parser with full §3.2–§4.4 coverage, focusing on §3.4.1 and §4.1.1",
           "difficulty": "hard"
+=======
+          "approach": "Submit a Windows implementation research proposal as a PR comment",
+          "difficulty": "easy"
+        },
+        {
+          "url": "https://github.com/UnsafeLabs/RFC-5322/issues/1",
+          "attempt": false,
+          "approach": "",
+          "difficulty": ""
+        },
+        {
+          "url": "https://github.com/trovu/trovu/issues/329",
+          "attempt": true,
+          "approach": "Document the current PWA behavior and suggest a fix",
+          "difficulty": "easy"
+>>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
         }
       ]
     },
     "act": {
+<<<<<<< HEAD
       "at": "2026-09-26T04:04:56.085Z",
       "date": "2026-09-26",
       "prs": 0,
@@ -88,6 +138,17 @@
         "skip https://github.com/UnsafeLabs/RFC-5322/issues/1: not easy/docs",
         "post attempt not published",
         "error: bad html"
+=======
+      "date": "2026-09-26",
+      "prs": 0,
+      "posts": 1,
+      "ok": true,
+      "status": "post: blog/how-to-build-an-email-address-parser-and-compare-pwa-vs-defa.html",
+      "at": "2026-09-26T04:45:50.066Z",
+      "log": [
+        "skip https://github.com/radumarias/rencfs/issues/3: repo dead/fork",
+        "POST WRITTEN+PUSHED (max_tokens+retry fix)"
+>>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       ]
     }
   },

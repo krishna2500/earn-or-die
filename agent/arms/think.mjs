@@ -12,7 +12,8 @@ const read = (p, d) => (existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : d)
 const SYSTEM = `You are the strategist of "earn-or-die": an autonomous agent that must earn its first USDT from $0 capital (owner capital forbidden), or self-destruct on day 90.
 Rules: no fake identity, no captcha automation, no spam accounts, no mining, no owner work. Channels: OSS bounty PRs (paid in crypto), a crypto checkout shop (needs traffic), SEO content.
 You think; you do not code here. Be brutally practical. Reply with ONLY minified JSON, no markdown fence:
-{"verdict":"<=180 chars strategic read","bounties":[{"url":"<exact url from input>","attempt":true|false,"approach":"<=200 chars concrete plan","difficulty":"easy|medium|hard"}],"next_content":["<=80 chars content idea"],"warnings":["<=100 chars each"]}`;
+{"verdict":"<=180 chars strategic read","bounties":[{"url":"<exact url from input>","attempt":true|false,"approach":"<=200 chars concrete plan","difficulty":"easy|medium|hard"}],"next_content":["<=80 chars content idea"],"warnings":["<=100 chars each"]}
+IMPORTANT: the act arm ONLY executes bounties where attempt=true AND (difficulty=="easy" OR approach is purely documentation/typo/README/CI-yaml). Set attempt=true ONLY for those — never for medium/hard code work (it will be skipped). Prefer fewer, genuinely doable attempts.`;
 
 export async function run(config, state) {
   const token = process.env.CF_API_TOKEN;

@@ -203,14 +203,29 @@ async function writePost(plan, token, log) {
     const ideas = (plan?.plan?.next_content || []).filter((i) => !titles.some((t) => t.includes(i.toLowerCase().slice(0, 20))));
     const idea = ideas[0] || `guide on accepting usdt payments ${new Date().toISOString().slice(0, 10)}`;
 
-    const html = await chat(
-      `You write ONE honest SEO blog post as complete HTML for krishna2500.github.io. STRICT: 800-1000 words (this means the rendered article body, NOT a stub — aim for over 6000 bytes of HTML). doctype html, lang en, dark style block copied from existing posts, <meta name="description">, canonical link, NO <script>, NO analytics, links ONLY to github.com/krishna2500/*, krishna2500.github.io/*, earn-or-die-pay.leadrescue.workers.dev/* — never any other URL. No invented statistics or fake claims, practical developer tone, include an h2-structured walkthrough. Output ONLY one fenced html block, nothing else.`,
-      JSON.stringify({ idea, existing_titles: titles, style_head: readFileSync(join(blogDir, existing[0]), "utf8").slice(0, 1400) })
-    );
-    const body = extractFence(html, ".html");
-    if (!body || !/<!doctype html>/i.test(body) || !/<\/html>/i.test(body)) throw new Error("bad html");
-    const words = body.replace(/<[^>]*>/g, " ").split(/\s+/).filter(Boolean).length;
-    if (body.length < 5500 || words < 500) throw new Error(`too short ${body.length}B/${words}w`);
+    const styleHead = JSON.stringify({ idea, existing_titles: titles, style_head: readFileSync(join(blogDir, existing[0]), "utf8").slice(0, 1400) });
+    let body = null;
+    let lastErr = "";
+    for (let att = 0; att < 2 && !body; att++) {
+      const html = await chat(
+        `You write ONE honest SEO blog post as complete HTML for krishna2500.github.io. STRICT: 800-1000 words (this means the rendered article body, NOT a stub — aim for over 6000 bytes of HTML). doctype html, lang en, dark style block copied from existing posts, <meta name="description">, canonical link, NO <script>, NO analytics, links ONLY to github.com/krishna2500/*, krishna2500.github.io/*, earn-or-die-pay.leadrescue.workers.dev/* — never any other URL. No invented statistics or fake claims, practical developer tone, include an h2-structured walkthrough. Output ONLY one fenced html block, nothing else.` +
+          (att ? `\nCRITICAL: your previous reply failed validation (${lastErr}). Write a LONGER, complete document this time — minimum 750 words.` : ""),
+        styleHead,
+        { max_tokens: 4000, timeout_ms: 120000 }
+      );
+      let cand = extractFence(html, ".html");
+      if (!cand) {
+        const lo = html.toLowerCase();
+        const s = lo.indexOf("<!doctype html");
+        const e = lo.lastIndexOf("</html>");
+        if (s >= 0 && e > s) cand = html.slice(s, e + 7);
+      }
+      if (!cand || !/<!doctype html>/i.test(cand) || !/<\/html>/i.test(cand)) { lastErr = `bad html (${html.length}B reply)`; continue; }
+      const w = cand.replace(/<[^>]*>/g, " ").split(/\s+/).filter(Boolean).length;
+      if (cand.length < 4200 || w < 500) { lastErr = `too short ${cand.length}B/${w}w`; continue; }
+      body = cand;
+    }
+    if (!body) throw new Error(lastErr || "post generation failed");
     const badLinks = [...body.matchAll(/https?:\/\/([^/"'\s]+)/g)].map((x) => x[1]).filter(
       (h) => !/(^|\.)github\.com$|githubusercontent\.com$|krishna2500\.github\.io$|workers\.dev$|github\.io$/.test(h)
     );
