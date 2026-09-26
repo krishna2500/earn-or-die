@@ -1,0 +1,92 @@
+name: leadgen-pipeline
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"  # Every 6 hours
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  leadgen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync latest state
+        run: git pull --rebase origin main || true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r leadgen/requirements.txt
+
+      - name: Run lead-gen pipeline
+        id: pipeline
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          HUNTER_API_KEY: ${{ secrets.HUNTER_API_KEY }}
+          APOLLO_API_KEY: ${{ secrets.APOLLO_API_KEY }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_OWNER_CHAT: ${{ secrets.TG_OWNER_CHAT }}
+        run: |
+          set +e
+          python -m leadgen.pipeline
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Persist leads + sites + logs
+        run: |
+          git config user.name "leadgen-agent"
+          git config user.email "leadgen-agent@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no changes"
+            exit 0
+          fi
+          git commit -m "leadgen: pipeline run ${{ github.run_number }}"
+          for i in 1 2 3; do
+            if git pull --rebase origin main && git push; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "push failed after 3 retries"
+          exit 1
+
+      - name: Notify on new leads
+        if: steps.pipeline.outputs.code == '0'
+        run: |
+          python -c "
+import json, os
+try:
+  with open('leadgen/out/summary.json') as f:
+    s = json.load(f)
+  if s.get('new_leads', 0) > 0 or s.get('new_replies', 0) > 0:
+    import requests
+    requests.post(
+      f'https://api.telegram.org/bot{os.getenv(\"TG_BOT_TOKEN\")}/sendMessage',
+      json={
+        'chat_id': os.getenv('TG_OWNER_CHAT'),
+        'text': f'🎯 LeadGen: {s.get(\"new_leads\",0)} new leads, {s.get(\"new_replies\",0)} replies'
+      }
+    )
+except: pass
+"

@@ -1,0 +1,10 @@
+requests
+groq
+sib-api-v3-sdk
+supabase
+jinja2
+pyyaml
+beautifulsoup4
+lxml
+python-dotenv
+cloudflare

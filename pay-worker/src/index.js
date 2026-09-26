@@ -54,9 +54,10 @@ async function makeOrder(env, product, price) {
     if (await activeAmount(env, amount)) continue;
     const id = crypto.randomUUID();
     const now = Date.now();
-    const order = { id, product, price, amount, created: now, expires: now + ORDER_TTL * 1000, status: "pending" };
-    await env.ORDERS.put(`order:${id}`, JSON.stringify(order), { expirationTtl: 3600 });
-    await env.ORDERS.put(`amt:${amount}`, id, { expirationTtl: 3600 });
+    const ttl = Number(env.ORDER_TTL_S) > 0 ? Number(env.ORDER_TTL_S) : ORDER_TTL;
+    const order = { id, product, price, amount, created: now, expires: now + ttl * 1000, status: "pending" };
+    await env.ORDERS.put(`order:${id}`, JSON.stringify(order), { expirationTtl: 86400 });
+    await env.ORDERS.put(`amt:${amount}`, id, { expirationTtl: 86400 });
     return order;
   }
   return null;
@@ -99,7 +100,8 @@ async function createOrder(env, body, ip) {
   if (!Number.isFinite(price) || price < 0.5 || price > 500) {
     return json({ error: "unknown product or price must be 0.5-500 USDT" }, 400);
   }
-  if (!ipSpend(ip)) return json({ error: "rate-limited, retry later" }, 429);
+  const lim = Number(env.ORDER_RATE_LIMIT);
+  if (!ipSpend(ip, lim > 0 ? lim : 10)) return json({ error: "rate-limited, retry later" }, 429);
   const order = await makeOrder(env, fromShop ? product : String(body?.product || "custom").slice(0, 80), price);
   if (!order) return json({ error: "no unique amount available, retry" }, 503);
   return json({
@@ -119,7 +121,7 @@ async function getOrder(env, id) {
   const o = JSON.parse(raw);
   if (o.status === "pending" && Date.now() > o.expires) {
     o.status = "expired";
-    await env.ORDERS.put(`order:${id}`, JSON.stringify(o), { expirationTtl: 3600 });
+    await env.ORDERS.put(`order:${id}`, JSON.stringify(o), { expirationTtl: 86400 });
   }
   const out = { order_id: o.id, status: o.status, product: o.product, pay_exact: o.amount, paid_tx: o.tx || null };
   if (o.status === "paid" && o.access_key) out.access_key = o.access_key;
@@ -188,68 +190,92 @@ async function useInvoice(env, request) {
 }
 
 async function verify(env) {
-  const list = await env.ORDERS.list({ prefix: "order:", limit: 30 });
-  const orders = [];
-  for (const k of list.keys) {
-    const raw = await env.ORDERS.get(k.name);
-    if (!raw) continue;
-    const o = JSON.parse(raw);
-    if (o.status === "pending" && Date.now() > o.expires) {
-      o.status = "expired";
-      await env.ORDERS.put(k.name, JSON.stringify(o), { expirationTtl: 3600 });
-      continue;
-    }
-    if (o.status === "pending") orders.push(o);
-    if (orders.length >= 30) break;
-  }
-  if (!orders.length) return 0;
-
+  // ZERO list() calls — free tier is 1k lists/day and this runs every minute.
+  // Matching goes through amt: (unique-amount index); a timestamp window skips history.
   const src = env.VERIFY_MOCK_URL || `https://api.trongrid.io/v1/accounts/${env.WALLET}/transactions/trc20?only_to=true&limit=50`;
   const r = await fetch(src, { headers: { accept: "application/json" } });
-  if (!r.ok) return 0;
+  if (!r.ok) {
+    const n = Number((await env.ORDERS.get("meta:vg_fail")) || 0) + 1;
+    await env.ORDERS.put("meta:vg_fail", String(n), { expirationTtl: 60 * 60 * 48 });
+    if (n >= 10) await tg(env, `⚠️ verify fetch failing x${n} (${r.status}) — payments may go undetected`);
+    return 0;
+  }
+  await env.ORDERS.put("meta:vg_fail", "0", { expirationTtl: 60 * 60 * 48 });
   const { data = [] } = await r.json();
 
+  const lastTs = Number((await env.ORDERS.get("meta:last_tx_ts")) || 0);
   let paid = 0;
+  let maxTs = lastTs;
+  const bump = (t) => {
+    if (t > maxTs) maxTs = t;
+  };
+
   for (const tx of data) {
+    const txTime = tx.block_timestamp || 0;
+    // 1s back-skew so same-millisecond siblings are re-checked; seen: dedupes
+    if (txTime && txTime < lastTs - 1000) continue;
     if (tx.token_info?.address && tx.token_info.address !== USDT_CONTRACT) continue;
-    if (await env.ORDERS.get(`seen:${tx.transaction_id}`)) continue;
     const value = Number(tx.value);
     if (!Number.isFinite(value) || value <= 0) continue;
+    if (await env.ORDERS.get(`seen:${tx.transaction_id}`)) continue;
     const amountStr = (value / 1e6).toFixed(6);
-    const txTime = tx.block_timestamp || 0;
-    const match = orders.find((o) => o.amount === amountStr && o.created <= txTime);
-    if (!match) continue;
 
-    match.status = "paid";
-    match.tx = tx.transaction_id;
-    match.paidAt = new Date(txTime).toISOString();
-    match.payer = tx.from;
-    await provision(env, match);
-    await env.ORDERS.put(`order:${match.id}`, JSON.stringify(match), { expirationTtl: 86400 * 30 });
-    await env.ORDERS.put(`amt:${match.amount}`, match.id, { expirationTtl: 86400 * 30 });
-    await env.ORDERS.put(`seen:${tx.transaction_id}`, match.id, { expirationTtl: 86400 * 30 });
+    const oid = await env.ORDERS.get(`amt:${amountStr}`);
+    if (!oid) {
+      bump(txTime);
+      continue;
+    }
+    const oraw = await env.ORDERS.get(`order:${oid}`);
+    if (!oraw) {
+      bump(txTime);
+      continue;
+    }
+    const o = JSON.parse(oraw);
+    const late = o.status === "expired";
+    if (o.status === "paid") {
+      bump(txTime);
+      continue;
+    }
+    if (o.created > txTime) {
+      // tx predates this invoice — never credit; seen: stops re-checking it every minute
+      await env.ORDERS.put(`seen:${tx.transaction_id}`, o.id, { expirationTtl: 86400 * 30 });
+      bump(txTime);
+      continue;
+    }
+
+    o.status = "paid";
+    o.tx = tx.transaction_id;
+    o.paidAt = new Date(txTime).toISOString();
+    o.payer = tx.from;
+    if (late) o.late = true;
+    await provision(env, o);
+    await env.ORDERS.put(`order:${o.id}`, JSON.stringify(o), { expirationTtl: 86400 * 30 });
+    await env.ORDERS.put(`amt:${o.amount}`, o.id, { expirationTtl: 86400 * 30 });
+    await env.ORDERS.put(`seen:${tx.transaction_id}`, o.id, { expirationTtl: 86400 * 30 });
+    bump(txTime);
 
     const events = (await env.ORDERS.get("events", { type: "json" })) || [];
     events.push({
       ts: new Date().toISOString(),
-      order_id: match.id,
-      product: match.product,
-      amount: match.price,
+      order_id: o.id,
+      product: o.product,
+      amount: o.price,
       currency: env.ASSET,
       tx: tx.transaction_id,
-      note: `${match.product} on-chain verified`,
+      note: `${o.product} on-chain verified${late ? " (late payment honored)" : ""}`,
     });
     while (events.length > 500) events.shift();
     await env.ORDERS.put("events", JSON.stringify(events));
 
     await tg(
       env,
-      `💰 PAID ${match.price} ${env.ASSET} — ${match.product}\ntx: ${tx.transaction_id}` +
-        (match.access_key ? `\nkey: ${match.access_key}` : "")
+      `💰 PAID ${o.price} ${env.ASSET} — ${o.product}${late ? " (late payment honored)" : ""}\ntx: ${tx.transaction_id}` +
+        (o.access_key ? `\nkey: ${o.access_key}` : "")
     );
     paid++;
-    orders.splice(orders.indexOf(match), 1);
   }
+
+  if (maxTs > lastTs) await env.ORDERS.put("meta:last_tx_ts", String(maxTs), { expirationTtl: 60 * 60 * 24 * 30 });
   return paid;
 }
 
@@ -454,6 +480,7 @@ export default {
           last_scheduled: ts ? new Date(ts).toISOString() : null,
           age_s: ts ? Math.round((Date.now() - ts) / 1000) : null,
           hits_today: hits,
+          rate_limit_env: String(env.ORDER_RATE_LIMIT),
           watchdog: wd || null,
         });
       }
