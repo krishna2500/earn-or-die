@@ -1,11 +1,7 @@
 {
   "born": "2026-09-25",
   "status": "alive",
-<<<<<<< HEAD
   "cycle": 19,
-=======
-  "cycle": 18,
->>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
   "lastRevenueAt": null,
   "totalRevenue": 0,
   "budgets": {
@@ -15,11 +11,7 @@
   },
   "armStatus": {
     "bounties": {
-<<<<<<< HEAD
       "at": "2026-09-26T04:04:47.160Z",
-=======
-      "at": "2026-09-26T04:43:43.757Z",
->>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "ok": true,
       "total": 68,
       "payable": 3,
@@ -28,15 +20,11 @@
       "candidates": []
     },
     "content": {
-<<<<<<< HEAD
       "at": "2026-09-26T04:04:56.086Z",
-=======
-      "at": "2026-09-26T04:44:04.986Z",
->>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "ok": true,
       "status": "publishing-live",
       "notes": [
-        "LIVE channel: krishna2500.github.io (GitHub Pages, zero-cost) — publishing now AUTONOMOUS (act arm writes+pushes, max 1/day).",
+        "LIVE channel: krishna2500.github.io (GitHub Pages, zero-cost) \u2014 publishing now AUTONOMOUS (act arm writes+pushes, max 1/day).",
         "posts: no-gateway tutorial, TRC-20 vs ERC-20, TronGrid verify guide, crypto-payments-101 (agent-written).",
         "plus usdt-paykit quickstart repo (github.com/krishna2500/usdt-paykit) + profile README linking shop.",
         "blocked: dev.to/Hashnode signups reject disposable emails; Telegraph unreachable from this network.",
@@ -46,109 +34,57 @@
       "next": "keep publishing to krishna2500.github.io, retry mainstream platforms if a durable email appears"
     },
     "products": {
-<<<<<<< HEAD
       "at": "2026-09-26T04:04:56.231Z",
       "ok": true,
       "status": "checkout-rail-live",
       "rail": "live",
       "lastEventSince": "2026-09-26T04:04:26.231Z",
-=======
-      "at": "2026-09-26T04:44:06.051Z",
-      "ok": true,
-      "status": "checkout-rail-live",
-      "rail": "live",
-      "lastEventSince": "2026-09-26T04:43:36.051Z",
->>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "newPayments": 0,
       "notes": [
         "on-chain USDT TRC-20 verification (no gateway, no KYC, no country block)",
         "rail: https://earn-or-die-pay.leadrescue.workers.dev",
-        "product 1 LIVE: CryptoPay API $3/100 credits → https://earn-or-die-pay.leadrescue.workers.dev/shop",
-        "next: distribution — owner shares /shop link once"
+        "product 1 LIVE: CryptoPay API $3/100 credits \u2192 https://earn-or-die-pay.leadrescue.workers.dev/shop",
+        "next: distribution \u2014 owner shares /shop link once"
       ]
     },
     "think": {
-<<<<<<< HEAD
       "at": "2026-09-26T04:04:49.250Z",
       "ok": true,
       "status": "High-priority bounties available",
-=======
-      "at": "2026-09-26T04:43:47.773Z",
-      "ok": true,
-      "status": "17 days in, no earnings",
->>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "model": "@cf/meta/llama-3.1-8b-instruct",
       "date": "2026-09-26",
       "calls": 1,
       "attempts": 2,
       "content_ideas": 1,
       "warnings": [
-<<<<<<< HEAD
         "Avoid low-scoring bounties like https://github.com/trovu/trovu/issues/329"
       ],
       "verdict": "High-priority bounties available",
-=======
-        "No earned USDT yet, be cautious of time"
-      ],
-      "verdict": "17 days in, no earnings",
->>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       "bounty_plan": [
         {
           "url": "https://github.com/radumarias/rencfs/issues/3",
           "attempt": true,
-<<<<<<< HEAD
           "approach": "Submit research implementation for Windows as a PR with clear documentation and tests",
           "difficulty": "medium"
         },
         {
           "url": "https://github.com/UnsafeLabs/RFC-5322/issues/1",
           "attempt": true,
-          "approach": "Implement ABNF-compliant email address parser with full §3.2–§4.4 coverage, focusing on §3.4.1 and §4.1.1",
+          "approach": "Implement ABNF-compliant email address parser with full \u00a73.2\u2013\u00a74.4 coverage, focusing on \u00a73.4.1 and \u00a74.1.1",
           "difficulty": "hard"
-=======
-          "approach": "Submit a Windows implementation research proposal as a PR comment",
-          "difficulty": "easy"
-        },
-        {
-          "url": "https://github.com/UnsafeLabs/RFC-5322/issues/1",
-          "attempt": false,
-          "approach": "",
-          "difficulty": ""
-        },
-        {
-          "url": "https://github.com/trovu/trovu/issues/329",
-          "attempt": true,
-          "approach": "Document the current PWA behavior and suggest a fix",
-          "difficulty": "easy"
->>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
         }
       ]
     },
     "act": {
-<<<<<<< HEAD
-      "at": "2026-09-26T04:04:56.085Z",
-      "date": "2026-09-26",
-      "prs": 0,
-      "posts": 0,
-      "ok": false,
-      "status": "no attempt (0 PRs)",
-      "error": "bad html",
-      "log": [
-        "skip https://github.com/radumarias/rencfs/issues/3: repo dead/fork",
-        "skip https://github.com/UnsafeLabs/RFC-5322/issues/1: not easy/docs",
-        "post attempt not published",
-        "error: bad html"
-=======
       "date": "2026-09-26",
       "prs": 0,
       "posts": 1,
       "ok": true,
       "status": "post: blog/how-to-build-an-email-address-parser-and-compare-pwa-vs-defa.html",
-      "at": "2026-09-26T04:45:50.066Z",
+      "at": "2026-09-26T04:40:00.000Z",
       "log": [
-        "skip https://github.com/radumarias/rencfs/issues/3: repo dead/fork",
+        "skip rencfs: repo dead/fork",
         "POST WRITTEN+PUSHED (max_tokens+retry fix)"
->>>>>>> 30c903b (act: max_tokens 4000 + 2-attempt length retry + unfenced-html salvage; think: align attempt flags with act gate; state: post #5 today)
       ]
     }
   },
