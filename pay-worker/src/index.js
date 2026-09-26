@@ -253,9 +253,18 @@ async function verify(env) {
   return paid;
 }
 
-const page = (env, body, title = "EARN-OR-DIE") =>
+const INDEXNOW_KEY = "1530340e4319a39160b5bed310e8f7d6";
+
+const page = (env, body, title = "EARN-OR-DIE", desc = "Earn from zero: USDT TRC-20 checkout with on-chain auto-verification — no gateway, no KYC.", path = "/") =>
   new Response(
     `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="${desc}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://earn-or-die-pay.leadrescue.workers.dev${path}">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://earn-or-die-pay.leadrescue.workers.dev${path}">
 <title>${title}</title>
 <style>
 body{font-family:system-ui;background:#0b0f14;color:#d7f5e9;margin:0;padding:40px 20px}
@@ -268,10 +277,23 @@ button{background:#16a34a;border:0;color:#fff;font-size:1rem;padding:12px 22px;b
     { headers: { "content-type": "text/html; charset=utf-8" } }
   );
 
-const shopPage = (env) =>
-  page(
+const shopPage = (env) => {
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: Object.entries(SHOP).map(([id, p], i) => ({
+      "@type": "Product",
+      position: i + 1,
+      name: p.title,
+      description: p.desc,
+      url: `https://earn-or-die-pay.leadrescue.workers.dev/shop?product=${id}`,
+      offers: { "@type": "Offer", price: p.price, priceCurrency: "USD", availability: "https://schema.org/InStock" },
+    })),
+  };
+  return page(
     env,
     `<h1>🧾 CryptoPay Shop</h1>
+<script type="application/ld+json">${JSON.stringify(ld)}</script>
 <p class="muted">On-chain USDT TRC-20 verification — no gateway, no KYC, no country block. Money lands straight in your wallet.</p>
 ${Object.entries(SHOP)
   .map(
@@ -310,8 +332,12 @@ async function check(){
     outEl.textContent=s;
   } else if(j.status==='expired'){clearInterval(timer);outEl.textContent='order expired — buy again'}
 }
-</script>`
+</script>`,
+    "CryptoPay Shop — accept USDT TRC-20, no gateway",
+    "Buy API credits and digital kits with USDT TRC-20. On-chain verification, instant key delivery, no KYC.",
+    "/shop"
   );
+};
 
 const statusPage = (env) =>
   page(
@@ -448,6 +474,9 @@ export default {
       }
       if (request.method === "GET" && url.pathname === "/get") {
         return await getAsset(env, url);
+      }
+      if (request.method === "GET" && url.pathname === "/indexnow-key.txt") {
+        return new Response(INDEXNOW_KEY, { headers: { "content-type": "text/plain" } });
       }
       if (request.method === "GET" && url.pathname === "/shop") {
         return shopPage(env);

@@ -8,6 +8,7 @@ import { chat, extractJson, extractFence } from "../llm.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = `${HERE}/../out`;
 const PRS = `${HERE}/../state/prs.json`;
+const SHOP = "https://earn-or-die-pay.leadrescue.workers.dev/shop";
 const read = (p, d) => (existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : d);
 const write = (p, v) => {
   mkdirSync(dirname(p), { recursive: true });
@@ -208,7 +209,7 @@ async function writePost(plan, token, log) {
     let lastErr = "";
     for (let att = 0; att < 2 && !body; att++) {
       const html = await chat(
-        `You write ONE honest SEO blog post as complete HTML for krishna2500.github.io. STRICT: 800-1000 words (this means the rendered article body, NOT a stub — aim for over 6000 bytes of HTML). doctype html, lang en, dark style block copied from existing posts, <meta name="description">, canonical link, NO <script>, NO analytics, links ONLY to github.com/krishna2500/*, krishna2500.github.io/*, earn-or-die-pay.leadrescue.workers.dev/* — never any other URL. No invented statistics or fake claims, practical developer tone, include an h2-structured walkthrough. Output ONLY one fenced html block, nothing else.` +
+        `You write ONE honest SEO blog post as complete HTML for krishna2500.github.io. STRICT: 800-1000 words (this means the rendered article body, NOT a stub — aim for over 6000 bytes of HTML). doctype html, lang en, dark style block copied from existing posts, <meta name="description">, canonical link, NO <script>, NO analytics, links ONLY to github.com/krishna2500/*, krishna2500.github.io/*, earn-or-die-pay.leadrescue.workers.dev/* — never any other URL. No invented statistics or fake claims, practical developer tone, include an h2-structured walkthrough, and end the article with a one-line footer link to ${SHOP} (USDT payment API credits shop). Output ONLY one fenced html block, nothing else.` +
           (att ? `\nCRITICAL: your previous reply failed validation (${lastErr}). Write a LONGER, complete document this time — minimum 750 words.` : ""),
         styleHead,
         { max_tokens: 4000, timeout_ms: 120000 }

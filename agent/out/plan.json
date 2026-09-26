@@ -1,12 +1,12 @@
 {
-  "generated": "2026-09-26T04:56:39.134Z",
+  "generated": "2026-09-26T05:13:47.866Z",
   "model": "@cf/meta/llama-3.1-8b-instruct",
   "context": {
     "day": 20,
     "status": "alive",
     "earned_total_usdt": 0,
     "days_until_dying": 44,
-    "shop_hits_today": 5,
+    "shop_hits_today": 9,
     "fixqueue": [],
     "fresh_bounties": [
       {
@@ -42,28 +42,22 @@
       {
         "url": "https://github.com/radumarias/rencfs/issues/3",
         "attempt": true,
-        "approach": "Submit a Windows implementation research proposal, <=2000 chars, focusing on existing solutions and potential challenges",
-        "difficulty": "medium"
+        "approach": "Submit a research implementation for Windows following the provided guidelines",
+        "difficulty": "easy"
       },
       {
         "url": "https://github.com/UnsafeLabs/RFC-5322/issues/1",
         "attempt": false,
         "approach": "",
         "difficulty": "hard"
-      },
-      {
-        "url": "https://github.com/trovu/trovu/issues/329",
-        "attempt": true,
-        "approach": "Document the issue with a step-by-step reproduction guide, <=1000 chars, and provide screenshots",
-        "difficulty": "easy"
       }
     ],
     "next_content": [
-      "Write a SEO-optimized blog post on 'Top 5 OSS projects for crypto enthusiasts'"
+      "Write SEO content on 'email address parser' for the crypto checkout shop"
     ],
     "warnings": [
-      "Low-scoring bounty (https://github.com/trovu/trovu/issues/329) may not be worth the effort",
-      "High-priority bounty (https://github.com/radumarias/rencfs/issues/3) requires significant research and implementation effort"
+      "Low-scoring bounty at trovu/trovu may not be worth the effort",
+      "High-priority bounties have no clear documentation or typo fixes"
     ]
   }
 }

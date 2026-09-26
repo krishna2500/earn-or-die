@@ -7,7 +7,8 @@
     { "id": "think", "enabled": true, "label": "Strategist (LLM) — plans what to attempt" },
     { "id": "act", "enabled": true, "label": "Doer — opens validated PRs, writes SEO posts" },
     { "id": "content", "enabled": true, "label": "SEO/affiliate content (research phase)" },
-    { "id": "products", "enabled": true, "label": "Micro-products with crypto checkout" }
+    { "id": "products", "enabled": true, "label": "Micro-products with crypto checkout" },
+    { "id": "grow", "enabled": true, "label": "Distribution — IndexNow indexing, repo topics, shop CTAs" }
   ],
   "payout": { "network": "TRC-20", "asset": "USDT", "address": "TL5YPXfZvokPy2TMtULRXmXRkzYbmmvevy" },
   "fleet": {
