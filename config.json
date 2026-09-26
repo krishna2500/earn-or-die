@@ -4,7 +4,7 @@
   "killRule": { "dyingAfterDays": 45, "deadAfterDays": 90 },
   "arms": [
     { "id": "bounties", "enabled": true, "label": "OSS bounties — scout, solve, claim" },
-    { "id": "scan", "enabled": true, "label": "Nuclei + LLM triage — scan bounty targets for vulns" },
+    { "id": "scan", "enabled": false, "label": "Nuclei + LLM triage — DISABLED (scanning third-party targets uninvited is unauthorized; re-scope before enabling)" },
     { "id": "think", "enabled": true, "label": "Strategist (LLM) — plans what to attempt" },
     { "id": "act", "enabled": true, "label": "Doer — opens validated PRs, writes SEO posts" },
     { "id": "content", "enabled": true, "label": "SEO/affiliate content (research phase)" },

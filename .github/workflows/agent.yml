@@ -21,26 +21,6 @@ jobs:
         with:
           node-version: 22
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Nuclei
-        run: |
-          curl -sSL https://github.com/projectdiscovery/nuclei/releases/latest/download/nuclei_linux_amd64.zip -o nuclei.zip
-          unzip nuclei.zip
-          sudo mv nuclei /usr/local/bin/
-          nuclei -version
-
-      - name: Install Python deps for scan arm
-        run: |
-          pip install groq requests
-
-      - name: Download Nuclei templates
-        run: |
-          nuclei -update-templates
-          nuclei -update
-
       - name: Run agent cycle
         id: agent
         continue-on-error: true

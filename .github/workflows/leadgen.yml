@@ -1,8 +1,8 @@
 name: leadgen-pipeline
 
+# Scheduled cold-outreach DISABLED: mass unsolicited email must be an explicit
+# owner decision (set BREVO/HUNTER/APOLLO/SUPABASE secrets + re-add cron to opt in).
 on:
-  schedule:
-    - cron: "0 */6 * * *"  # Every 6 hours
   workflow_dispatch:
 
 permissions:
