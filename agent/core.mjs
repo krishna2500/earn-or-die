@@ -4,6 +4,21 @@ import { fileURLToPath } from "url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const read = (p, d) => (existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : d);
+// self-heal: if a bad merge ever commits git conflict markers into our JSON, keep the HEAD side
+function repairJson(p) {
+  try {
+    if (!existsSync(p)) return;
+    const raw = readFileSync(p, "utf8");
+    if (!raw.includes("<<<<<<<")) return;
+    const fixed = raw.replace(/<<<<<<< HEAD\n([\s\S]*?)=======\n[\s\S]*?>>>>>>>[^\n]*\n/g, "$1");
+    JSON.parse(fixed);
+    writeFileSync(p, fixed);
+    console.error(`repaired conflict markers in ${p}`);
+  } catch (e) {
+    console.error(`repair failed for ${p}: ${e.message}`);
+  }
+}
+for (const f of ["state/state.json", "state/prs.json", "out/plan.json", "out/bounties.json", "out/fixqueue.json"]) repairJson(`${HERE}/${f}`);
 const write = (p, v) => {
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, JSON.stringify(v, null, 2) + "\n");
