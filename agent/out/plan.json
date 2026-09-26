@@ -1,12 +1,12 @@
 {
-  "generated": "2026-09-25T16:59:45.052Z",
+  "generated": "2026-09-26T04:04:49.250Z",
   "model": "@cf/meta/llama-3.1-8b-instruct",
   "context": {
-    "day": 15,
+    "day": 18,
     "status": "alive",
     "earned_total_usdt": 0,
-    "days_until_dying": 45,
-    "shop_hits_today": 22,
+    "days_until_dying": 44,
+    "shop_hits_today": 0,
     "fixqueue": [],
     "fresh_bounties": [
       {
@@ -34,35 +34,29 @@
         "body": ""
       }
     ],
-    "last_verdict": "Focus on high-scoring bounties"
+    "last_verdict": null
   },
   "plan": {
-    "verdict": "High-scoring bounties require significant effort, focus on lower-scoring, easier bounties",
+    "verdict": "High-priority bounties available",
     "bounties": [
       {
         "url": "https://github.com/radumarias/rencfs/issues/3",
-        "attempt": false,
-        "approach": "Submit a basic implementation for Windows, then iterate on feedback",
+        "attempt": true,
+        "approach": "Submit research implementation for Windows as a PR with clear documentation and tests",
         "difficulty": "medium"
       },
       {
         "url": "https://github.com/UnsafeLabs/RFC-5322/issues/1",
-        "attempt": false,
-        "approach": "Break down the task into smaller, manageable parts, start with a basic parser",
-        "difficulty": "hard"
-      },
-      {
-        "url": "https://github.com/trovu/trovu/issues/329",
         "attempt": true,
-        "approach": "Implement a simple solution to open target URLs in the default browser",
-        "difficulty": "easy"
+        "approach": "Implement ABNF-compliant email address parser with full §3.2–§4.4 coverage, focusing on §3.4.1 and §4.1.1",
+        "difficulty": "hard"
       }
     ],
     "next_content": [
-      "Write a SEO-optimized article about the benefits of OSS bounties for developers"
+      "Write SEO-optimized content on 'Implementing Email Address Parsers in Various Programming Languages'"
     ],
     "warnings": [
-      "Low-scoring bounty may not be worth the effort, consider focusing on other tasks"
+      "Avoid low-scoring bounties like https://github.com/trovu/trovu/issues/329"
     ]
   }
 }
