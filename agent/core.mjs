@@ -10,8 +10,14 @@ function repairJson(p) {
     if (!existsSync(p)) return;
     const raw = readFileSync(p, "utf8");
     if (!raw.includes("<<<<<<<")) return;
-    const fixed = raw.replace(/<<<<<<< HEAD\n([\s\S]*?)=======\n[\s\S]*?>>>>>>>[^\n]*\n/g, "$1");
-    JSON.parse(fixed);
+    let fixed = raw.replace(/<<<<<<< HEAD\n([\s\S]*?)=======\n[\s\S]*?>>>>>>>[^\n]*\n/g, "$1");
+    try {
+      JSON.parse(fixed);
+    } catch {
+      // HEAD side may end with a trailing comma before a closing brace/bracket
+      fixed = fixed.replace(/,(\s*[}\]])/g, "$1");
+      JSON.parse(fixed);
+    }
     writeFileSync(p, fixed);
     console.error(`repaired conflict markers in ${p}`);
   } catch (e) {
